@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Mafia Crafting Calculator</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+
+  <body class="bg-zinc-950 text-white">
+    <div class="flex h-screen">
+      <!-- Sidebar -->
+
+      <aside class="w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col">
+        <div class="p-6 border-b border-zinc-800">
+          <h1 class="text-2xl font-bold text-red-500">Mafia</h1>
+
+          <p class="text-zinc-400 text-sm">Crafting Calculator</p>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-2">
+          <button
+            id="menu-dashboard"
+            class="menu active"
+            onclick="showDashboard()"
+          >
+            🏠 Dashboard
+          </button>
+
+          <button id="menu-calculator" class="menu" onclick="loadPlanner()">
+            📋 Production Planner
+          </button>
+          <button id="menu-transactions" class="menu" onclick="loadTransactions()">
+            📜 Riwayat
+          </button>
+          <button id="menu-material" class="menu" onclick="loadMaterials()">
+            📦 Materials
+          </button>
+
+          <button id="menu-crafting" class="menu" onclick="loadCraftings()">
+            🔫 Crafting
+          </button>
+
+          <button id="menu-settings" class="menu" onclick="loadSettings()">⚙ Settings</button>
+        </nav>
+
+        <div class="p-5 border-t border-zinc-800">
+          <p class="text-xs text-zinc-500">Version 1.0</p>
+        </div>
+      </aside>
+
+      <!-- Content -->
+
+      <main class="flex-1 overflow-auto">
+        <!-- Navbar -->
+
+        <header class="bg-zinc-900 border-b border-zinc-800 px-8 py-5">
+          <h2 class="text-2xl font-bold">Dashboard</h2>
+        </header>
+
+        <!-- Content -->
+
+        <section class="p-8">
+          <div id="app"></div>
+        </section>
+      </main>
+    </div>
+
+    <!-- SCRIPT -->
+    <script src="assets/js/core/storage.js"></script>
+    <script src="assets/js/modules/material.js"></script>
+    <script src="assets/js/modules/crafting.js"></script>
+    <script src="assets/js/modules/planner.js"></script>
+    <script src="assets/js/modules/transaction.js"></script>
+    <script src="assets/js/modules/settings.js"></script>
+    <script src="assets/js/app.js"></script>
+  </body>
+</html>
