@@ -1,41 +1,44 @@
 function settingsPage() {
-  return `
+  const webhooks = getWebhooks();
+
+  let html = `
         <div class="card">
 
             <h2 class="text-2xl font-bold mb-6">
-                ⚙️ Settings
+                ⚙️ Discord Settings
             </h2>
 
-            <div class="space-y-6">
+            <div class="space-y-5">
+    `;
 
-                <div>
+  WEBHOOK_TYPES.forEach((type) => {
+    html += `
+            <div>
 
-                    <label class="block mb-2 font-semibold">
+                <label class="block mb-2 font-semibold">
 
-                        Discord Webhook
+                    ${type.label}
 
-                    </label>
+                </label>
 
-                    <input
-                        id="webhookUrl"
-                        type="text"
-                        class="input"
-                        placeholder="https://discord.com/api/webhooks/..."
-                        value="${getWebhook()}">
+                <input
+                    id="webhook-${type.key}"
+                    type="text"
+                    class="input"
+                    placeholder="https://discord.com/api/webhooks/..."
+                    value="${webhooks[type.key] || ""}">
 
-                    <p class="text-sm text-zinc-500 mt-2">
+            </div>
+        `;
+  });
 
-                        Masukkan URL Discord Webhook.
-
-                    </p>
-
-                </div>
+  html += `
 
                 <button
-                    onclick="saveWebhookSetting()"
-                    class="btn">
+                    class="btn"
+                    onclick="saveWebhookSettings()">
 
-                    💾 Simpan
+                    💾 Simpan Settings
 
                 </button>
 
@@ -43,6 +46,8 @@ function settingsPage() {
 
         </div>
     `;
+
+  return html;
 }
 
 function loadSettings() {
@@ -51,10 +56,16 @@ function loadSettings() {
   document.getElementById("app").innerHTML = settingsPage();
 }
 
-function saveWebhookSetting() {
-  const url = document.getElementById("webhookUrl").value.trim();
+function saveWebhookSettings() {
+  const data = {};
 
-  saveWebhook(url);
+  WEBHOOK_TYPES.forEach((type) => {
+    data[type.key] = document
+      .getElementById(`webhook-${type.key}`)
+      .value.trim();
+  });
 
-  alert("Webhook berhasil disimpan.");
+  saveWebhooks(data);
+
+  alert("Discord Webhook berhasil disimpan.");
 }

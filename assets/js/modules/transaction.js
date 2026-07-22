@@ -194,6 +194,25 @@ function deleteTransaction(id) {
   alert("Transaksi berhasil dihapus.");
 }
 
+async function sendTransactionDiscord(id) {
+  const transactions = getTransactions();
+
+  const item = transactions.find((transaction) => transaction.id == id);
+
+  if (!item) {
+    alert("Transaksi tidak ditemukan.");
+    return;
+  }
+
+  const payload = buildTransactionEmbed(item.transaction);
+
+  const success = await sendDiscordWebhook("crafting", payload);
+
+  if (success) {
+    alert("Transaksi berhasil dikirim ke Discord.");
+  }
+}
+
 function getWebhook() {
   return localStorage.getItem("discordWebhook") || "";
 }
