@@ -141,6 +141,20 @@ function plannerPage() {
         📄 Ringkasan Transaksi
     </h2>
 
+    <div class="mb-5">
+
+    <label class="block mb-2 font-medium">
+        👤 Nama Pemesan
+    </label>
+
+    <input
+        id="customerName"
+        type="text"
+        class="input"
+        placeholder="Contoh: BLACK LINE">
+
+    </div>
+
     <div id="transactionSummary"></div>
 
     <button
@@ -735,13 +749,42 @@ function getTransactionResult() {
 }
 
 function saveTransaction() {
+  const customer = document.getElementById("customerName").value.trim();
+
+  if (customer === "") {
+    alert("Nama pemesan wajib diisi.");
+    return;
+  }
+
   const transactions = getTransactions();
 
   const transaction = getTransactionResult();
 
+  const craftings = getCraftings();
+
+  const items = productionItems
+    .filter((item) => item.craftingId !== "")
+    .map((item) => {
+      const crafting = craftings.find((c) => c.id == item.craftingId);
+
+      return {
+        id: crafting.id,
+        name: crafting.name,
+        qty: item.qty,
+      };
+    });
+
   transactions.push({
     id: Date.now(),
+
+    customer,
+
     createdAt: new Date().toISOString(),
+
+    status: "Proses",
+
+    items,
+
     transaction,
   });
 

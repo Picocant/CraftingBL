@@ -1,5 +1,9 @@
 body {
   font-family: Poppins, sans-serif;
+
+  background: #09090b;
+
+  color: white;
 }
 
 .menu {
@@ -29,21 +33,27 @@ body {
 }
 
 .card {
-  background: #18181b;
+  background: linear-gradient(180deg, #18181b 0%, #141417 100%);
 
   border: 1px solid #27272a;
 
-  border-radius: 18px;
+  border-radius: 20px;
 
-  padding: 25px;
+  padding: 24px;
 
-  transition: 0.25s;
+  transition: all 0.25s ease;
+
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
 
 .card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-4px);
 
   border-color: #dc2626;
+
+  box-shadow:
+    0 0 0 1px rgba(220, 38, 38, 0.25),
+    0 18px 40px rgba(0, 0, 0, 0.45);
 }
 
 .card h3 {
@@ -73,17 +83,21 @@ body {
 
   border: 1px solid #3f3f46;
 
-  padding: 14px;
+  padding: 14px 16px;
 
-  border-radius: 12px;
+  border-radius: 14px;
 
   color: white;
+
+  transition: 0.2s;
 }
 
 .input:focus {
   outline: none;
 
   border-color: #dc2626;
+
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
 .btn-red {
@@ -95,11 +109,17 @@ body {
 }
 
 .btn {
+  background: #27272a;
+
+  padding: 12px 18px;
+
+  border-radius: 12px;
+
+  transition: 0.25s;
+}
+
+.btn:hover {
   background: #3f3f46;
-
-  padding: 10px 18px;
-
-  border-radius: 10px;
 }
 
 .btn-delete {
@@ -108,4 +128,58 @@ body {
   padding: 10px 18px;
 
   border-radius: 10px;
+}
+
+.menu-item {
+  position: relative;
+
+  width: 100%;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 14px 18px;
+
+  border-radius: 14px;
+
+  color: #d4d4d8;
+
+  transition: 0.25s;
+
+  font-weight: 500;
+}
+
+.menu-item:hover {
+  background: #27272a;
+
+  color: #fff;
+
+  transform: translateX(6px);
+}
+
+.menu-item.active {
+  background: #dc2626;
+
+  color: #fff;
+}
+
+.menu-item.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: -12px;
+
+  top: 12px;
+
+  bottom: 12px;
+
+  width: 4px;
+
+  border-radius: 20px;
+
+  background: #ef4444;
 }

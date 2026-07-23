@@ -48,19 +48,41 @@ function renderTransactions() {
 
                             <div>
 
-                                <div class="font-bold text-lg">
+                                <div class="font-semibold text-red-400">
+
+                                    👤 ${item.customer}
+
+                                </div>
+
+                                <div class="font-bold text-lg mt-1">
+
                                     ${item.transaction.method.toUpperCase()}
+
                                 </div>
 
                                 <div class="text-sm text-zinc-400">
+
                                     ${new Date(item.createdAt).toLocaleString("id-ID")}
+
                                 </div>
 
                             </div>
 
-                            <div class="text-green-400 font-bold">
-                                Rp ${item.transaction.totalSellPrice.toLocaleString("id-ID")}
-                            </div>
+                            <div class="text-right">
+
+                                  <div class="text-green-400 font-bold">
+
+                                      Rp ${item.transaction.totalSellPrice.toLocaleString("id-ID")}
+
+                                  </div>
+
+                                  <div class="text-sm mt-2">
+
+                                      ${item.status === "Selesai" ? "✅ Selesai" : "⏳ Proses"}
+
+                                  </div>
+
+                              </div>
 
                         </div>
 
@@ -110,6 +132,32 @@ function showTransaction(id) {
       <h3 class="text-xl font-bold mb-5">
         📄 Detail Transaksi
       </h3>
+
+              <div class="space-y-3 mb-6">
+
+            <div class="flex justify-between">
+
+                <span>Pemesan</span>
+
+                <strong>${item.customer}</strong>
+
+            </div>
+
+            <div class="flex justify-between">
+
+                <span>Status</span>
+
+                <strong>
+
+                    ${item.status === "Selesai" ? "✅ Selesai" : "⏳ Proses"}
+
+                </strong>
+
+            </div>
+
+        </div>
+
+        <hr class="my-5 border-zinc-700">
 
       <div class="space-y-3">
 
@@ -169,6 +217,20 @@ function showTransaction(id) {
 
     </button>
 
+    ${
+      item.status === "Proses"
+        ? `
+            <button
+                onclick="finishTransaction(${item.id})"
+                class="btn flex-1">
+
+                ✅ Selesaikan
+
+            </button>
+            `
+        : ""
+    }
+
 </div>
 
     </div>
@@ -192,6 +254,24 @@ function deleteTransaction(id) {
   document.getElementById("transactionDetail").innerHTML = "";
 
   alert("Transaksi berhasil dihapus.");
+}
+
+function finishTransaction(id) {
+  const transactions = getTransactions();
+
+  const index = transactions.findIndex((x) => x.id == id);
+
+  if (index === -1) return;
+
+  transactions[index].status = "Selesai";
+
+  saveTransactions(transactions);
+
+  renderTransactions();
+
+  showTransaction(id);
+
+  alert("Transaksi berhasil diselesaikan.");
 }
 
 async function sendTransactionDiscord(id) {

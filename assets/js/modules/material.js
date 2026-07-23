@@ -1,5 +1,21 @@
 let editingMaterialId = null;
 
+function resetMaterialForm() {
+  editingMaterialId = null;
+
+  document.getElementById("materialName").value = "";
+
+  document.getElementById("materialPrice").value = "";
+
+  document.getElementById("materialCurrency").value = "Clean";
+
+  document.getElementById("saveMaterialBtn").textContent = "Simpan Material";
+
+  document.getElementById("cancelMaterialBtn").classList.add("hidden");
+
+  document.getElementById("materialName").focus();
+}
+
 function materialPage() {
   const data = getMaterials();
 
@@ -8,11 +24,22 @@ function materialPage() {
 
             <div class="card">
 
-                <h2 class="text-2xl font-bold mb-6">
-                    Materials
-                </h2>
+                    <div class="flex justify-between items-center mb-6">
 
-                <div class="grid md:grid-cols-3 gap-4">
+                            <h2 class="text-2xl font-bold">
+                                Materials
+                            </h2>
+                        <span
+                          id="materialCount"
+                          class="px-3 py-1 rounded-lg bg-zinc-800 text-sm">
+
+                          0 Material
+
+                        </span>
+
+                      </div>
+
+                    <div class="grid md:grid-cols-3 gap-4">
 
                     <input
                         id="materialName"
@@ -40,10 +67,20 @@ function materialPage() {
                 </div>
 
                 <button
+                    id="saveMaterialBtn"
                     onclick="saveMaterial()"
                     class="btn-red mt-5">
 
                     Simpan Material
+
+                </button>
+
+                <button
+                  id="cancelMaterialBtn"
+                  onclick="resetMaterialForm()"
+                  class="btn hidden">
+
+                     Batal
 
                 </button>
 
@@ -76,9 +113,26 @@ function saveMaterial() {
 
     return;
   }
-  if (editingMaterialId === null) {
-    const data = getMaterials();
 
+  const data = getMaterials();
+
+  const exists = data.find(
+    (material) =>
+      material.name.toLowerCase() === name.toLowerCase() &&
+      material.id !== editingMaterialId,
+  );
+
+  if (exists) {
+    alert("Nama material sudah ada.");
+    return;
+  }
+
+  if (isNaN(price) || price <= 0) {
+    alert("Harga harus lebih dari 0.");
+    return;
+  }
+
+  if (editingMaterialId === null) {
     data.push({
       id: Date.now(),
 
@@ -92,9 +146,11 @@ function saveMaterial() {
     saveMaterials(data);
 
     loadMaterials();
-  } else {
-    const data = getMaterials();
 
+    setTimeout(() => {
+      resetMaterialForm();
+    }, 0);
+  } else {
     const index = data.findIndex((x) => x.id === editingMaterialId);
 
     if (index !== -1) {
@@ -108,6 +164,10 @@ function saveMaterial() {
       saveMaterials(data);
 
       loadMaterials();
+
+      setTimeout(() => {
+        resetMaterialForm();
+      }, 0);
     }
   }
   editingMaterialId = null;
@@ -122,11 +182,15 @@ function editMaterial(id) {
 
   editingMaterialId = id;
 
+  document.getElementById("saveMaterialBtn").textContent = "Update Material";
+
   document.getElementById("materialName").value = material.name;
 
   document.getElementById("materialPrice").value = material.price;
 
   document.getElementById("materialCurrency").value = material.currency;
+
+  document.getElementById("cancelMaterialBtn").classList.remove("hidden");
 }
 
 function renderMaterials() {
@@ -138,7 +202,7 @@ function renderMaterials() {
 
   data
     .filter((x) => x.name.toLowerCase().includes(keyword))
-
+    .sort((a, b) => a.name.localeCompare(b.name, "id"))
     .forEach((item) => {
       html += `
 
@@ -192,6 +256,8 @@ function renderMaterials() {
     });
 
   document.getElementById("materialList").innerHTML = html;
+  document.getElementById("materialCount").textContent =
+    `${data.length} Material`;
 }
 
 function deleteMaterial(id) {
@@ -206,7 +272,9 @@ function deleteMaterial(id) {
 
 function loadMaterials() {
   setActiveMenu("menu-material");
+  setPageTitle("Materials");
   document.getElementById("app").innerHTML = materialPage();
 
   renderMaterials();
+  lucide.createIcons();
 }
