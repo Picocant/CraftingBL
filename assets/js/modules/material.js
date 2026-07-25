@@ -1,7 +1,6 @@
 let editingMaterialId = null;
 let supabaseMaterials = [];
 
-
 async function fetchMaterialsFromSupabase() {
   const { data, error } = await supabaseClient
     .from("materials")
@@ -36,8 +35,6 @@ function resetMaterialForm() {
 }
 
 function materialPage() {
-  const data = getMaterials();
-
   return `
         <div class="space-y-6">
 
@@ -123,19 +120,22 @@ function materialPage() {
     `;
 }
 
-function saveMaterial() {
+async function saveMaterial() {
   const name = document.getElementById("materialName").value.trim();
   const price = parseInt(document.getElementById("materialPrice").value);
   const currency = document.getElementById("materialCurrency").value;
-  if (name == "") {
-    alert("Nama wajib diisi");
 
+  if (name === "") {
+    alert("Nama wajib diisi.");
     return;
   }
 
-  const data = getMaterials();
+  if (isNaN(price) || price <= 0) {
+    alert("Harga harus lebih dari 0.");
+    return;
+  }
 
-  const exists = data.find(
+  const exists = supabaseMaterials.find(
     (material) =>
       material.name.toLowerCase() === name.toLowerCase() &&
       material.id !== editingMaterialId,
@@ -146,70 +146,88 @@ function saveMaterial() {
     return;
   }
 
-  if (isNaN(price) || price <= 0) {
-    alert("Harga harus lebih dari 0.");
+  // Untuk step ini kita kerjakan CREATE dahulu.
+
+  const saveButton = document.getElementById("saveMaterialBtn");
+
+  saveButton.disabled = true;
+  saveButton.textContent =
+    editingMaterialId === null ? "Menyimpan..." : "Mengupdate...";
+
+  let error;
+
+  if (editingMaterialId === null) {
+    const result = await supabaseClient.from("materials").insert({
+      name: name,
+      price: price,
+      currency: currency,
+    });
+
+    error = result.error;
+  } else {
+    const result = await supabaseClient
+      .from("materials")
+      .update({
+        name: name,
+        price: price,
+        currency: currency,
+      })
+      .eq("id", editingMaterialId);
+
+    error = result.error;
+  }
+
+  if (error) {
+    console.error("Gagal menyimpan material:", error);
+
+    alert(
+      editingMaterialId === null
+        ? "Material gagal disimpan."
+        : "Material gagal diupdate.",
+    );
+
+    saveButton.disabled = false;
+
+    saveButton.textContent =
+      editingMaterialId === null ? "Simpan Material" : "Update Material";
+
     return;
   }
 
-  if (editingMaterialId === null) {
-    data.push({
-      id: Date.now(),
+  alert(
+    editingMaterialId === null
+      ? "Material berhasil disimpan."
+      : "Material berhasil diupdate.",
+  );
 
-      name,
+  await fetchMaterialsFromSupabase();
 
-      price,
+  renderMaterials();
 
-      currency,
-    });
-
-    saveMaterials(data);
-
-    loadMaterials();
-
-    setTimeout(() => {
-      resetMaterialForm();
-    }, 0);
-  } else {
-    const index = data.findIndex((x) => x.id === editingMaterialId);
-
-    if (index !== -1) {
-      data[index] = {
-        id: editingMaterialId,
-        name,
-        price,
-        currency,
-      };
-
-      saveMaterials(data);
-
-      loadMaterials();
-
-      setTimeout(() => {
-        resetMaterialForm();
-      }, 0);
-    }
-  }
-  editingMaterialId = null;
+  resetMaterialForm();
 }
 
 function editMaterial(id) {
-  const data = getMaterials();
+  const material = supabaseMaterials.find(
+    (item) => Number(item.id) === Number(id),
+  );
 
-  const material = data.find((item) => item.id === id);
+  if (!material) {
+    alert("Material tidak ditemukan.");
+    return;
+  }
 
-  if (!material) return;
+  editingMaterialId = Number(id);
 
-  editingMaterialId = id;
+  document.getElementById("materialName").value = material.name;
+  document.getElementById("materialPrice").value = material.price;
+  document.getElementById("materialCurrency").value = material.currency;
 
   document.getElementById("saveMaterialBtn").textContent = "Update Material";
 
-  document.getElementById("materialName").value = material.name;
-
-  document.getElementById("materialPrice").value = material.price;
-
-  document.getElementById("materialCurrency").value = material.currency;
-
   document.getElementById("cancelMaterialBtn").classList.remove("hidden");
+
+  document.getElementById("materialName").focus();
 }
 
 function renderMaterials() {
@@ -278,14 +296,31 @@ function renderMaterials() {
     `${data.length} Material`;
 }
 
-function deleteMaterial(id) {
-  if (!confirm("Hapus material?")) return;
+async function deleteMaterial(id) {
+  if (!confirm("Yakin ingin menghapus material ini?")) {
+    return;
+  }
 
-  const data = getMaterials().filter((x) => x.id != id);
+  const { error } = await supabaseClient
+    .from("materials")
+    .delete()
+    .eq("id", id);
 
-  saveMaterials(data);
+  if (error) {
+    console.error("Gagal menghapus material:", error);
+
+    alert(
+      "Material gagal dihapus. Material mungkin masih digunakan oleh crafting atau transaksi.",
+    );
+
+    return;
+  }
+
+  await fetchMaterialsFromSupabase();
 
   renderMaterials();
+
+  alert("Material berhasil dihapus.");
 }
 
 async function loadMaterials() {

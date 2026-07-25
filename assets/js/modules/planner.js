@@ -526,12 +526,16 @@ function refreshPlanner() {
   }
 }
 
-function loadPlanner() {
+async function loadPlanner() {
   setActiveMenu("menu-calculator");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Production Planner");
   }
+
+  // Ambil data terbaru dari Supabase
+  await fetchMaterialsFromSupabase();
+  await fetchCraftingsFromSupabase();
 
   document.getElementById("app").innerHTML = plannerPage();
 
@@ -606,7 +610,7 @@ function renderPlannerRows() {
 
   if (!container) return;
 
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
   let html = "";
 
@@ -690,7 +694,7 @@ function renderProductionSummary() {
 
   if (!container) return;
 
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
   let totalQty = 0;
   let totalPrice = 0;
@@ -971,7 +975,7 @@ function changeCashPercent(value) {
 ========================================================= */
 
 function getTotalSellPrice() {
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
   let total = 0;
 
@@ -993,7 +997,7 @@ function getTotalSellPrice() {
 ========================================================= */
 
 function getTotalMaterials() {
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
   const materials = {};
 
@@ -1025,7 +1029,7 @@ function getTotalMaterials() {
 function getMaterialSummary() {
   const totalMaterials = getTotalMaterials();
 
-  const materials = getMaterials() || [];
+  const materials = supabaseMaterials || [];
 
   let cleanCost = 0;
   let dirtyCost = 0;
@@ -1520,9 +1524,8 @@ function renderTransactionMaterials(materials) {
    SAVE TRANSACTION
 ========================================================= */
 
-function saveTransaction() {
+async function saveTransaction() {
   const customerInput = document.getElementById("customerName");
-
   const customer = customerInput?.value.trim() || "";
 
   if (customer === "") {
@@ -1531,7 +1534,7 @@ function saveTransaction() {
     return;
   }
 
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
   const items = productionItems
     .filter((item) => item.craftingId !== "" && Number(item.qty) > 0)
@@ -1540,14 +1543,13 @@ function saveTransaction() {
         (crafting) => crafting.id == item.craftingId,
       );
 
-      if (!crafting) {
-        return null;
-      }
+      if (!crafting) return null;
 
       return {
         id: crafting.id,
         name: crafting.name,
         qty: Number(item.qty),
+        sellPrice: Number(crafting.sellPrice) || 0,
       };
     })
     .filter(Boolean);
@@ -1559,27 +1561,150 @@ function saveTransaction() {
 
   const transaction = getTransactionResult();
 
-  const transactions = getTransactions();
+  const saveButton = document.querySelector(
+    'button[onclick="saveTransaction()"]',
+  );
 
-  transactions.push({
-    id: Date.now(),
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "Menyimpan...";
+  }
 
-    customer,
+  const { data: newTransaction, error } = await supabaseClient
+    .from("transactions")
+    .insert({
+      customer: customer,
+      payment_method: transaction.method,
+      total_sell_price: Math.round(transaction.totalSellPrice),
+      dirty_money: Math.round(transaction.dirtyMoney),
+      clean_money: Math.round(transaction.cleanMoney),
+      cash_percent: transaction.cashPercent,
+      material_percent: transaction.materialPercent,
+      clean_multiplier: transaction.cleanMultiplier,
+      status: "Menunggu",
+    })
+    .select("id")
+    .single();
 
-    createdAt: new Date().toISOString(),
+  if (error) {
+    console.error("Gagal menyimpan transaksi:", error);
 
-    status: "Proses",
+    alert("Transaksi gagal disimpan.");
 
-    items,
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = "Simpan Transaksi";
+    }
 
-    transaction,
-  });
+    return;
+  }
 
-  saveTransactions(transactions);
+  console.log("Transaction berhasil dibuat:", newTransaction);
+
+  // ==========================================
+  // SIMPAN TRANSACTION ITEMS
+  // ==========================================
+
+  const transactionItems = items.map((item) => ({
+    transaction_id: newTransaction.id,
+    crafting_id: Number(item.id),
+    qty: Number(item.qty),
+    sell_price: Number(item.sellPrice),
+    subtotal: Number(item.sellPrice) * Number(item.qty),
+  }));
+
+  const { error: itemsError } = await supabaseClient
+    .from("transaction_items")
+    .insert(transactionItems);
+
+  if (itemsError) {
+    console.error("Gagal menyimpan transaction items:", itemsError);
+
+    alert("Transaksi berhasil dibuat, tetapi item transaksi gagal disimpan.");
+
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = "Simpan Transaksi";
+    }
+
+    return;
+  }
+
+  console.log("Transaction items berhasil disimpan:", transactionItems);
+
+  // ==========================================
+  // SIMPAN TRANSACTION MATERIALS
+  // ==========================================
+
+  if (transaction.materials.length > 0) {
+    const transactionMaterials = transaction.materials
+      .map((item) => {
+        const material = supabaseMaterials.find(
+          (material) => material.id == item.id,
+        );
+
+        if (!material) {
+          console.warn("Material tidak ditemukan:", item.id);
+
+          return null;
+        }
+
+        const qty = Number(item.qty) || 0;
+        const price = Number(material.price) || 0;
+
+        return {
+          transaction_id: newTransaction.id,
+          material_id: Number(material.id),
+          name: material.name,
+          qty: qty,
+          currency: material.currency,
+          price: price,
+          subtotal: qty * price,
+        };
+      })
+      .filter(Boolean);
+
+    if (transactionMaterials.length > 0) {
+      const { error: materialsError } = await supabaseClient
+        .from("transaction_materials")
+        .insert(transactionMaterials);
+
+      if (materialsError) {
+        console.error("Gagal menyimpan transaction materials:", materialsError);
+
+        alert(
+          "Transaksi dan item berhasil dibuat, tetapi material transaksi gagal disimpan.",
+        );
+
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.textContent = "Simpan Transaksi";
+        }
+
+        return;
+      }
+
+      console.log(
+        "Transaction materials berhasil disimpan:",
+        transactionMaterials,
+      );
+    }
+  }
+
+  // ==========================================
+  // TRANSAKSI SELESAI
+  // ==========================================
 
   alert("Transaksi berhasil disimpan.");
 
   resetPlanner();
+
+  // BELUM reset planner.
+  // Berikutnya transaction_materials.
+
+  // BELUM reset planner.
+  // Step berikutnya kita akan insert transaction_items.
+  // resetPlanner();
 }
 
 /* =========================================================

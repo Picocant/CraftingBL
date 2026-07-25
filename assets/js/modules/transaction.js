@@ -1,3 +1,57 @@
+let supabaseTransactions = [];
+
+async function fetchTransactionsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("transactions")
+    .select(
+      `
+      id,
+      created_at,
+      customer,
+      payment_method,
+      total_sell_price,
+      dirty_money,
+      clean_money,
+      cash_percent,
+      material_percent,
+      clean_multiplier,
+      status,
+      transaction_items (
+          id,
+          crafting_id,
+          qty,
+          sell_price,
+          subtotal,
+          craftings (
+            id,
+            name,
+            category
+          )
+        ),
+      transaction_materials (
+        id,
+        material_id,
+        name,
+        qty,
+        currency,
+        price,
+        subtotal
+      )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Gagal mengambil transactions:", error);
+    supabaseTransactions = [];
+    return;
+  }
+
+  supabaseTransactions = data || [];
+
+  console.log("Transactions loaded from Supabase:", supabaseTransactions);
+}
+
 function transactionsPage() {
   return `
     <div class="card">
@@ -17,102 +71,140 @@ function transactionsPage() {
   `;
 }
 
-function loadTransactions() {
+async function loadTransactions() {
   setActiveMenu("menu-transactions");
 
   document.getElementById("app").innerHTML = transactionsPage();
+
+  document.getElementById("transactionsList").innerHTML = `
+    <div class="text-center text-zinc-500 py-8">
+      Memuat transaksi...
+    </div>
+  `;
+
+  await fetchTransactionsFromSupabase();
 
   renderTransactions();
 }
 
 function renderTransactions() {
-  const transactions = getTransactions();
+  const transactions = supabaseTransactions;
 
   let html = "";
 
   if (transactions.length === 0) {
     html = `
-            <p class="text-gray-500">
-                Belum ada transaksi.
-            </p>
-        `;
+      <p class="text-gray-500">
+        Belum ada transaksi.
+      </p>
+    `;
   } else {
-    transactions
-      .slice()
-      .reverse()
-      .forEach((item, index) => {
-        html += `
-                    <div class="card mb-4 cursor-pointer hover:border-red-500 transition" onclick="showTransaction(${item.id})">
+    transactions.forEach((item) => {
+      html += `
+        <div
+          class="card mb-4 cursor-pointer hover:border-red-500 transition"
+          onclick="showTransaction(${item.id})">
 
-                        <div class="flex justify-between items-center">
+          <div class="flex justify-between items-center">
 
-                            <div>
+            <div>
 
-                                <div class="font-semibold text-red-400">
+              <div class="font-semibold text-red-400">
+                👤 ${item.customer}
+              </div>
 
-                                    👤 ${item.customer}
+              <div class="font-bold text-lg mt-1">
+                ${formatPaymentMethod(item.payment_method)}
+              </div>
 
-                                </div>
+              <div class="text-sm text-zinc-400">
+                ${new Date(item.created_at).toLocaleString("id-ID")}
+              </div>
 
-                                <div class="font-bold text-lg mt-1">
+            </div>
 
-                                    ${item.transaction.method.toUpperCase()}
+            <div class="text-right">
 
-                                </div>
+              <div class="text-green-400 font-bold">
+                Rp ${Number(item.total_sell_price).toLocaleString("id-ID")}
+              </div>
 
-                                <div class="text-sm text-zinc-400">
+              <div class="text-sm mt-2">
+                ${formatTransactionStatus(item.status)}
+              </div>
 
-                                    ${new Date(item.createdAt).toLocaleString("id-ID")}
+            </div>
 
-                                </div>
+          </div>
 
-                            </div>
-
-                            <div class="text-right">
-
-                                  <div class="text-green-400 font-bold">
-
-                                      Rp ${item.transaction.totalSellPrice.toLocaleString("id-ID")}
-
-                                  </div>
-
-                                  <div class="text-sm mt-2">
-
-                                      ${item.status === "Selesai" ? "✅ Selesai" : "⏳ Proses"}
-
-                                  </div>
-
-                              </div>
-
-                        </div>
-
-                    </div>
-                `;
-      });
+        </div>
+      `;
+    });
   }
 
   document.getElementById("transactionsList").innerHTML = html;
 }
 
+function formatPaymentMethod(method) {
+  const methods = {
+    dirty: "FULL DIRTY MONEY",
+    clean: "FULL CLEAN MONEY",
+    hybrid50: "HYBRID 50 / 50",
+    custom: "HYBRID CUSTOM",
+  };
+
+  return methods[method] || String(method || "-").toUpperCase();
+}
+
+function formatTransactionStatus(status) {
+  if (status === "Selesai") {
+    return "✅ Selesai";
+  }
+
+  return "⏳ Menunggu";
+}
+
 function showTransaction(id) {
-  const transactions = getTransactions();
+  const item = supabaseTransactions.find((transaction) => transaction.id == id);
 
-  const item = transactions.find((t) => t.id == id);
+  if (!item) {
+    console.error("Transaksi tidak ditemukan:", id);
+    return;
+  }
 
-  if (!item) return;
-
-  const trx = item.transaction;
+  // ==========================================
+  // MATERIAL TRANSAKSI
+  // ==========================================
 
   let materialHTML = "";
 
-  if (trx.materials.length > 0) {
-    trx.materials.forEach((material) => {
+  const materials = item.transaction_materials || [];
+
+  if (materials.length > 0) {
+    materials.forEach((material) => {
       materialHTML += `
-        <div class="flex justify-between border-b border-zinc-800 py-2">
+        <div class="border-b border-zinc-800 py-3">
 
-          <span>${material.name}</span>
+          <div class="flex justify-between">
+            <span>${material.name}</span>
 
-          <strong>${material.qty}</strong>
+            <strong>
+              ${Number(material.qty).toLocaleString("id-ID")}
+            </strong>
+          </div>
+
+          <div class="flex justify-between text-sm text-zinc-500 mt-1">
+
+            <span>
+              ${material.currency}
+              · Rp ${Number(material.price).toLocaleString("id-ID")}
+            </span>
+
+            <span>
+              Rp ${Number(material.subtotal).toLocaleString("id-ID")}
+            </span>
+
+          </div>
 
         </div>
       `;
@@ -125,65 +217,102 @@ function showTransaction(id) {
     `;
   }
 
+  // ==========================================
+  // ITEM CRAFTING
+  // ==========================================
+
+  let itemHTML = "";
+
+  const transactionItems = item.transaction_items || [];
+
+  if (transactionItems.length > 0) {
+    transactionItems.forEach((transactionItem) => {
+      itemHTML += `
+        <div class="border-b border-zinc-800 py-3">
+
+          <div class="flex justify-between">
+
+            <span>
+              ${transactionItem.craftings?.name || `Crafting #${transactionItem.crafting_id}`}
+            </span>
+
+            <strong>
+              x${transactionItem.qty}
+            </strong>
+
+          </div>
+
+          <div class="flex justify-between text-sm text-zinc-500 mt-1">
+
+            <span>
+              Rp ${Number(transactionItem.sell_price).toLocaleString("id-ID")} / item
+            </span>
+
+            <span>
+              Rp ${Number(transactionItem.subtotal).toLocaleString("id-ID")}
+            </span>
+
+          </div>
+
+        </div>
+      `;
+    });
+  } else {
+    itemHTML = `
+      <p class="text-zinc-500">
+        Tidak ada item crafting.
+      </p>
+    `;
+  }
+
+  // ==========================================
+  // DETAIL
+  // ==========================================
+
   document.getElementById("transactionDetail").innerHTML = `
-  
+
     <div class="card border border-red-600">
 
-      <h3 class="text-xl font-bold mb-5">
-        📄 Detail Transaksi
-      </h3>
+      <div class="flex justify-between items-start mb-6">
 
-              <div class="space-y-3 mb-6">
+        <div>
 
-            <div class="flex justify-between">
+          <h3 class="text-xl font-bold">
+            📄 Detail Transaksi
+          </h3>
 
-                <span>Pemesan</span>
-
-                <strong>${item.customer}</strong>
-
-            </div>
-
-            <div class="flex justify-between">
-
-                <span>Status</span>
-
-                <strong>
-
-                    ${item.status === "Selesai" ? "✅ Selesai" : "⏳ Proses"}
-
-                </strong>
-
-            </div>
+          <div class="text-sm text-zinc-500 mt-1">
+            Transaction #${item.id}
+          </div>
 
         </div>
 
-        <hr class="my-5 border-zinc-700">
+        <div>
+          ${formatTransactionStatus(item.status)}
+        </div>
+
+      </div>
 
       <div class="space-y-3">
 
         <div class="flex justify-between">
+          <span>Pemesan</span>
+          <strong>${item.customer}</strong>
+        </div>
+
+        <div class="flex justify-between">
+          <span>Tanggal</span>
+
+          <strong>
+            ${new Date(item.created_at).toLocaleString("id-ID")}
+          </strong>
+        </div>
+
+        <div class="flex justify-between">
           <span>Metode</span>
-          <strong>${trx.method.toUpperCase()}</strong>
-        </div>
 
-        <div class="flex justify-between">
-          <span>Total Harga</span>
           <strong>
-            Rp ${trx.totalSellPrice.toLocaleString("id-ID")}
-          </strong>
-        </div>
-
-        <div class="flex justify-between">
-          <span>Dirty Money</span>
-          <strong>
-            Rp ${trx.dirtyMoney.toLocaleString("id-ID")}
-          </strong>
-        </div>
-
-        <div class="flex justify-between">
-          <span>Clean Money</span>
-          <strong>
-            Rp ${trx.cleanMoney.toLocaleString("id-ID")}
+            ${formatPaymentMethod(item.payment_method)}
           </strong>
         </div>
 
@@ -192,80 +321,155 @@ function showTransaction(id) {
       <hr class="my-5 border-zinc-700">
 
       <h4 class="font-semibold mb-3">
-        Material
+        🛠 Item Crafting
+      </h4>
+
+      ${itemHTML}
+
+      <hr class="my-5 border-zinc-700">
+
+      <div class="space-y-3">
+
+        <div class="flex justify-between">
+          <span>Total Harga</span>
+
+          <strong class="text-green-400">
+            Rp ${Number(item.total_sell_price).toLocaleString("id-ID")}
+          </strong>
+        </div>
+
+        <div class="flex justify-between">
+          <span>Dirty Money</span>
+
+          <strong>
+            Rp ${Number(item.dirty_money).toLocaleString("id-ID")}
+          </strong>
+        </div>
+
+        <div class="flex justify-between">
+          <span>Clean Money</span>
+
+          <strong>
+            Rp ${Number(item.clean_money).toLocaleString("id-ID")}
+          </strong>
+        </div>
+
+      </div>
+
+      <hr class="my-5 border-zinc-700">
+
+      <h4 class="font-semibold mb-3">
+        📦 Material
       </h4>
 
       ${materialHTML}
 
-        <hr class="my-5 border-zinc-700">
+      <hr class="my-5 border-zinc-700">
 
-<div class="flex gap-3">
+      <div class="flex gap-3">
 
-    <button
-        onclick="deleteTransaction(${item.id})"
-        class="btn-delete flex-1">
+  ${
+    isAdmin()
+      ? `
+        <button
+          onclick="deleteTransaction(${item.id})"
+          class="btn-delete flex-1">
 
-        🗑 Hapus
+          🗑 Hapus
 
-    </button>
+        </button>
+      `
+      : ""
+  }
 
-    <button
-        onclick="sendTransactionDiscord(${item.id})"
-        class="btn flex-1">
+  <button
+    onclick="sendTransactionDiscord(${item.id})"
+    class="btn flex-1">
 
-        📤 Discord
+    📤 Discord
 
-    </button>
+  </button>
 
-    ${
-      item.status === "Proses"
-        ? `
-            <button
-                onclick="finishTransaction(${item.id})"
-                class="btn flex-1">
+  ${
+    item.status !== "Selesai"
+      ? `
+        <button
+          onclick="finishTransaction(${item.id})"
+          class="btn flex-1">
 
-                ✅ Selesaikan
+          ✅ Selesaikan
 
-            </button>
-            `
-        : ""
-    }
+        </button>
+      `
+      : ""
+  }
 
 </div>
 
     </div>
-
   `;
 }
 
-function deleteTransaction(id) {
+async function deleteTransaction(id) {
+  // ==========================================
+  // ADMIN ONLY
+  // ==========================================
+
+  if (!isAdmin()) {
+    alert("Akses ditolak. Hanya admin yang dapat menghapus transaksi.");
+    return;
+  }
+
   if (!confirm("Yakin ingin menghapus transaksi ini?")) {
     return;
   }
 
-  const transactions = getTransactions();
+  const { error } = await supabaseClient
+    .from("transactions")
+    .delete()
+    .eq("id", id);
 
-  const result = transactions.filter((transaction) => transaction.id != id);
+  if (error) {
+    console.error("Gagal menghapus transaksi:", error);
 
-  saveTransactions(result);
+    alert("Transaksi gagal dihapus.");
+    return;
+  }
+
+  await fetchTransactionsFromSupabase();
 
   renderTransactions();
 
-  document.getElementById("transactionDetail").innerHTML = "";
+  const detail = document.getElementById("transactionDetail");
+
+  if (detail) {
+    detail.innerHTML = "";
+  }
 
   alert("Transaksi berhasil dihapus.");
 }
 
-function finishTransaction(id) {
-  const transactions = getTransactions();
+async function finishTransaction(id) {
+  if (!confirm("Selesaikan transaksi ini?")) {
+    return;
+  }
 
-  const index = transactions.findIndex((x) => x.id == id);
+  const { error } = await supabaseClient
+    .from("transactions")
+    .update({
+      status: "Selesai",
+    })
+    .eq("id", id);
 
-  if (index === -1) return;
+  if (error) {
+    console.error("Gagal menyelesaikan transaksi:", error);
 
-  transactions[index].status = "Selesai";
+    alert("Transaksi gagal diselesaikan.");
+    return;
+  }
 
-  saveTransactions(transactions);
+  // Refresh data dari Supabase
+  await fetchTransactionsFromSupabase();
 
   renderTransactions();
 
@@ -275,16 +479,39 @@ function finishTransaction(id) {
 }
 
 async function sendTransactionDiscord(id) {
-  const transactions = getTransactions();
-
-  const item = transactions.find((transaction) => transaction.id == id);
+  const item = supabaseTransactions.find((transaction) => transaction.id == id);
 
   if (!item) {
     alert("Transaksi tidak ditemukan.");
     return;
   }
 
-  const payload = buildTransactionEmbed(item.transaction);
+  const transaction = {
+    method: item.payment_method,
+
+    totalSellPrice: Number(item.total_sell_price) || 0,
+
+    dirtyMoney: Number(item.dirty_money) || 0,
+
+    cleanMoney: Number(item.clean_money) || 0,
+
+    cashPercent: Number(item.cash_percent) || 0,
+
+    materialPercent: Number(item.material_percent) || 0,
+
+    cleanMultiplier: Number(item.clean_multiplier) || 0,
+
+    materials: (item.transaction_materials || []).map((material) => ({
+      id: material.material_id,
+      name: material.name,
+      qty: Number(material.qty) || 0,
+      currency: material.currency,
+      price: Number(material.price) || 0,
+      subtotal: Number(material.subtotal) || 0,
+    })),
+  };
+
+  const payload = buildTransactionEmbed(transaction);
 
   const success = await sendDiscordWebhook("crafting", payload);
 

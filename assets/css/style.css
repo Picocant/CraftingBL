@@ -350,3 +350,69 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #52525b;
 }
+
+
+/* =========================================================
+   RESPONSIVE - MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  /* Sidebar selalu compact di mobile */
+  .sidebar {
+    width: 72px;
+  }
+
+  .sidebar.collapsed {
+    width: 72px;
+  }
+
+  .sidebar-header {
+    padding: 16px 12px;
+  }
+
+  .sidebar-header > div {
+    justify-content: center;
+  }
+
+  .sidebar-brand {
+    display: none;
+  }
+
+  .sidebar-logo,
+  .sidebar.collapsed .sidebar-logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sidebar nav,
+  .sidebar.collapsed nav {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar .menu-item,
+  .sidebar.collapsed .menu-item {
+    justify-content: center;
+    gap: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .sidebar .menu-text {
+    display: none;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  /* Card lebih compact */
+  .card {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .card h1 {
+    font-size: 30px;
+  }
+}

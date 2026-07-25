@@ -1,3 +1,5 @@
+let supabaseCraftings = [];
+
 let craftingMaterials = [
   {
     materialId: "",
@@ -6,6 +8,46 @@ let craftingMaterials = [
 ];
 
 let editingCraftingId = null;
+
+async function fetchCraftingsFromSupabase() {
+  const { data: craftings, error: craftingError } = await supabaseClient
+    .from("craftings")
+    .select("id, name, category, sell_price")
+    .order("name", { ascending: true });
+
+  if (craftingError) {
+    console.error("Gagal mengambil craftings:", craftingError);
+    supabaseCraftings = [];
+    return;
+  }
+
+  const { data: recipeMaterials, error: materialsError } = await supabaseClient
+    .from("crafting_materials")
+    .select("crafting_id, material_id, qty");
+
+  if (materialsError) {
+    console.error("Gagal mengambil crafting materials:", materialsError);
+
+    supabaseCraftings = [];
+    return;
+  }
+
+  supabaseCraftings = (craftings || []).map((crafting) => ({
+    id: crafting.id,
+    name: crafting.name,
+    category: crafting.category,
+    sellPrice: Number(crafting.sell_price),
+
+    materials: (recipeMaterials || [])
+      .filter((item) => item.crafting_id === crafting.id)
+      .map((item) => ({
+        materialId: item.material_id,
+        qty: item.qty,
+      })),
+  }));
+
+  console.log("Craftings loaded from Supabase:", supabaseCraftings);
+}
 
 function craftingPage() {
   return `
@@ -89,14 +131,24 @@ function craftingPage() {
     `;
 }
 
-function loadCraftings() {
+async function loadCraftings() {
   setActiveMenu("menu-crafting");
 
   document.getElementById("app").innerHTML = craftingPage();
 
-  renderMaterialRows();
+  document.getElementById("craftingList").innerHTML = `
+    <div class="text-center text-zinc-500 py-8">
+      Memuat crafting...
+    </div>
+  `;
 
+  await fetchMaterialsFromSupabase();
+  await fetchCraftingsFromSupabase();
+
+  renderMaterialRows();
   renderCraftingList();
+
+  lucide.createIcons();
 }
 
 function addMaterialRow() {
@@ -109,7 +161,7 @@ function addMaterialRow() {
 }
 
 function renderMaterialRows() {
-  const materials = getMaterials();
+  const materials = supabaseMaterials;
 
   let html = "";
 
@@ -174,11 +226,9 @@ function removeMaterialRow(index) {
   renderMaterialRows();
 }
 
-function saveCrafting() {
+async function saveCrafting() {
   const name = document.getElementById("craftingName").value.trim();
-
   const category = document.getElementById("craftingCategory").value;
-
   const sellPrice = parseInt(document.getElementById("craftingPrice").value);
 
   if (name === "") {
@@ -201,33 +251,181 @@ function saveCrafting() {
     return;
   }
 
-  const data = getCraftings();
+  // ==========================================
+  // UPDATE CRAFTING
+  // ==========================================
 
-  if (editingCraftingId === null) {
-    data.push({
-      id: Date.now(),
-      name,
-      category,
-      sellPrice,
-      materials: [...craftingMaterials],
-    });
-  } else {
-    const index = data.findIndex((item) => item.id === editingCraftingId);
+  if (editingCraftingId !== null) {
+    const saveButton = document.querySelector(
+      'button[onclick="saveCrafting()"]',
+    );
 
-    if (index !== -1) {
-      data[index] = {
-        id: editingCraftingId,
-        name,
-        category,
-        sellPrice,
-        materials: [...craftingMaterials],
-      };
+    if (saveButton) {
+      saveButton.disabled = true;
+      saveButton.textContent = "Mengupdate...";
     }
+
+    const craftingId = Number(editingCraftingId);
+
+    // 1. UPDATE DATA UTAMA CRAFTING
+    const { error: craftingUpdateError } = await supabaseClient
+      .from("craftings")
+      .update({
+        name: name,
+        category: category,
+        sell_price: sellPrice,
+      })
+      .eq("id", craftingId);
+
+    if (craftingUpdateError) {
+      console.error("Gagal mengupdate crafting:", craftingUpdateError);
+
+      alert("Crafting gagal diupdate.");
+
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = "💾 Update Crafting";
+      }
+
+      return;
+    }
+
+    // 2. HAPUS RECIPE LAMA
+    const { error: deleteMaterialsError } = await supabaseClient
+      .from("crafting_materials")
+      .delete()
+      .eq("crafting_id", craftingId);
+
+    if (deleteMaterialsError) {
+      console.error(
+        "Gagal menghapus bahan crafting lama:",
+        deleteMaterialsError,
+      );
+
+      alert("Data crafting terupdate, tetapi bahan lama gagal diperbarui.");
+
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = "💾 Update Crafting";
+      }
+
+      return;
+    }
+
+    // 3. SIAPKAN RECIPE BARU
+    const recipeRows = craftingMaterials.map((item) => ({
+      crafting_id: craftingId,
+      material_id: Number(item.materialId),
+      qty: Number(item.qty),
+    }));
+
+    // 4. INSERT RECIPE BARU
+    const { error: insertMaterialsError } = await supabaseClient
+      .from("crafting_materials")
+      .insert(recipeRows);
+
+    if (insertMaterialsError) {
+      console.error(
+        "Gagal menyimpan bahan crafting baru:",
+        insertMaterialsError,
+      );
+
+      alert("Crafting terupdate, tetapi bahan crafting baru gagal disimpan.");
+
+      return;
+    }
+
+    alert("Crafting berhasil diupdate.");
+
+    // 5. RESET MODE EDIT
+    editingCraftingId = null;
+
+    craftingMaterials = [
+      {
+        materialId: "",
+        qty: 1,
+      },
+    ];
+
+    // 6. AMBIL DATA TERBARU
+    await fetchCraftingsFromSupabase();
+
+    // 7. REFRESH HALAMAN
+    document.getElementById("app").innerHTML = craftingPage();
+
+    renderMaterialRows();
+    renderCraftingList();
+
+    lucide.createIcons();
+
+    return;
   }
 
-  saveCraftings(data);
+  const saveButton = document.querySelector('button[onclick="saveCrafting()"]');
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "Menyimpan...";
+  }
+
+  // ==========================================
+  // 1. INSERT CRAFTING
+  // ==========================================
+
+  const { data: newCrafting, error: craftingError } = await supabaseClient
+    .from("craftings")
+    .insert({
+      name: name,
+      category: category,
+      sell_price: sellPrice,
+    })
+    .select("id")
+    .single();
+
+  if (craftingError) {
+    console.error("Gagal menyimpan crafting:", craftingError);
+
+    alert("Crafting gagal disimpan.");
+
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = "💾 Simpan Crafting";
+    }
+
+    return;
+  }
+
+  // ==========================================
+  // 2. SIAPKAN MATERIAL CRAFTING
+  // ==========================================
+
+  const recipeRows = craftingMaterials.map((item) => ({
+    crafting_id: newCrafting.id,
+    material_id: Number(item.materialId),
+    qty: Number(item.qty),
+  }));
+
+  // ==========================================
+  // 3. INSERT CRAFTING MATERIALS
+  // ==========================================
+
+  const { error: materialsError } = await supabaseClient
+    .from("crafting_materials")
+    .insert(recipeRows);
+
+  if (materialsError) {
+    console.error("Gagal menyimpan bahan crafting:", materialsError);
+
+    alert("Crafting berhasil dibuat, tetapi bahan crafting gagal disimpan.");
+
+    return;
+  }
 
   alert("Crafting berhasil disimpan.");
+
+  // ==========================================
+  // 4. RESET FORM
+  // ==========================================
 
   editingCraftingId = null;
 
@@ -238,13 +436,24 @@ function saveCrafting() {
     },
   ];
 
-  loadCraftings();
+  // ==========================================
+  // 5. REFRESH DATA
+  // ==========================================
+
+  await fetchCraftingsFromSupabase();
+
+  document.getElementById("app").innerHTML = craftingPage();
+
+  renderMaterialRows();
+  renderCraftingList();
+
+  lucide.createIcons();
 }
 
 function renderCraftingList() {
-  const craftings = getCraftings();
+  const craftings = supabaseCraftings;
 
-  const materials = getMaterials();
+  const materials = supabaseMaterials;
 
   let html = "";
 
@@ -322,28 +531,104 @@ function renderCraftingList() {
   document.getElementById("craftingList").innerHTML = html;
 }
 
-function deleteCrafting(id) {
-  if (!confirm("Yakin ingin menghapus crafting ini?")) {
+async function deleteCrafting(id) {
+  const crafting = supabaseCraftings.find(
+    (item) => Number(item.id) === Number(id),
+  );
+
+  if (!crafting) {
+    alert("Data crafting tidak ditemukan.");
     return;
   }
 
-  const data = getCraftings().filter((item) => item.id !== id);
+  const confirmed = confirm(
+    `Yakin ingin menghapus crafting "${crafting.name}"?`,
+  );
 
-  saveCraftings(data);
+  if (!confirmed) {
+    return;
+  }
 
+  const craftingId = Number(id);
+
+  // ==========================================
+  // 1. HAPUS CRAFTING MATERIALS
+  // ==========================================
+
+  const { error: materialsError } = await supabaseClient
+    .from("crafting_materials")
+    .delete()
+    .eq("crafting_id", craftingId);
+
+  if (materialsError) {
+    console.error("Gagal menghapus bahan crafting:", materialsError);
+
+    alert("Bahan crafting gagal dihapus.");
+    return;
+  }
+
+  // ==========================================
+  // 2. HAPUS CRAFTING
+  // ==========================================
+
+  const { error: craftingError } = await supabaseClient
+    .from("craftings")
+    .delete()
+    .eq("id", craftingId);
+
+  if (craftingError) {
+    console.error("Gagal menghapus crafting:", craftingError);
+
+    alert("Crafting gagal dihapus.");
+    return;
+  }
+
+  alert("Crafting berhasil dihapus.");
+
+  // ==========================================
+  // 3. RESET EDIT MODE JIKA DIPERLUKAN
+  // ==========================================
+
+  if (Number(editingCraftingId) === craftingId) {
+    editingCraftingId = null;
+
+    craftingMaterials = [
+      {
+        materialId: "",
+        qty: 1,
+      },
+    ];
+  }
+
+  // ==========================================
+  // 4. REFRESH DATA DARI SUPABASE
+  // ==========================================
+
+  await fetchCraftingsFromSupabase();
+
+  document.getElementById("app").innerHTML = craftingPage();
+
+  renderMaterialRows();
   renderCraftingList();
+
+  lucide.createIcons();
 }
 
 function editCrafting(id) {
-  const crafting = getCraftings().find((item) => item.id === id);
+  const crafting = supabaseCraftings.find(
+    (item) => Number(item.id) === Number(id),
+  );
 
-  if (!crafting) return;
+  if (!crafting) {
+    alert("Data crafting tidak ditemukan.");
+    return;
+  }
 
-  editingCraftingId = id;
+  editingCraftingId = crafting.id;
 
   craftingMaterials = crafting.materials.map((item) => ({
-    materialId: item.materialId,
-    qty: item.qty,
+    materialId: String(item.materialId),
+    qty: Number(item.qty),
   }));
 
   document.getElementById("app").innerHTML = craftingPage();
@@ -354,6 +639,8 @@ function editCrafting(id) {
 
   renderMaterialRows();
   renderCraftingList();
+
+  lucide.createIcons();
 
   window.scrollTo({
     top: 0,

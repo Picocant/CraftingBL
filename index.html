@@ -68,7 +68,6 @@
           <button
             id="menu-transactions"
             class="menu-item"
-            data-access="admin"
             onclick="loadTransactions()"
             title="Transactions"
           >
@@ -134,9 +133,9 @@
       <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
         <!-- HEADER -->
         <header
-          class="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between"
+          class="bg-zinc-900 border-b border-zinc-800 px-4 sm:px-6 py-4 flex items-center justify-between"
         >
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3 sm:gap-4 min-w-0">
             <!-- SIDEBAR TOGGLE -->
             <button
               id="sidebarToggle"
@@ -151,13 +150,15 @@
               ></i>
             </button>
 
-            <h2 id="pageTitle" class="text-xl font-bold">Overview</h2>
+            <h2 id="pageTitle" class="text-lg sm:text-xl font-bold truncate">
+              Overview
+            </h2>
           </div>
         </header>
 
         <!-- CONTENT -->
-        <section class="flex-1 overflow-y-auto p-8">
-          <div id="app"></div>
+        <section class="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-8 min-w-0">
+          <div id="app" class="min-w-0"></div>
         </section>
       </main>
     </div>

@@ -1,3 +1,111 @@
+
+
+let supabaseOverviewTransactions = [];
+
+let overviewMaterialCount = 0;
+let overviewCraftingCount = 0;
+
+async function fetchOverviewTransactionsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("transactions")
+    .select(
+      `
+      id,
+      created_at,
+      customer,
+      payment_method,
+      total_sell_price,
+      dirty_money,
+      clean_money,
+      status,
+      transaction_items (
+        id,
+        crafting_id,
+        qty,
+        sell_price,
+        subtotal,
+        craftings (
+          id,
+          name,
+          category
+        )
+      )
+    `,
+    )
+    .order("created_at", { ascending: false });
+
+    const { count: materialCount, error: materialCountError } =
+      await supabaseClient.from("materials").select("*", {
+        count: "exact",
+        head: true,
+      });
+
+    if (materialCountError) {
+      console.error("Gagal mengambil jumlah material:", materialCountError);
+
+      overviewMaterialCount = 0;
+    } else {
+      overviewMaterialCount = materialCount || 0;
+    }
+
+    const { count: craftingCount, error: craftingCountError } =
+      await supabaseClient.from("craftings").select("*", {
+        count: "exact",
+        head: true,
+      });
+
+    if (craftingCountError) {
+      console.error("Gagal mengambil jumlah crafting:", craftingCountError);
+
+      overviewCraftingCount = 0;
+    } else {
+      overviewCraftingCount = craftingCount || 0;
+    }
+
+  if (error) {
+    console.error("Gagal mengambil data overview:", error);
+    supabaseOverviewTransactions = [];
+    return;
+  }
+
+  // Adapter Supabase -> format yang dipakai Overview lama
+  supabaseOverviewTransactions = (data || []).map((transaction) => ({
+    id: transaction.id,
+
+    createdAt: transaction.created_at,
+
+    customer: transaction.customer,
+
+    status: transaction.status,
+
+    transaction: {
+      method: transaction.payment_method,
+      totalSellPrice: Number(transaction.total_sell_price) || 0,
+      dirtyMoney: Number(transaction.dirty_money) || 0,
+      cleanMoney: Number(transaction.clean_money) || 0,
+    },
+
+    items: (transaction.transaction_items || []).map((item) => ({
+      craftingId: item.crafting_id,
+
+      name: item.craftings?.name || `Crafting #${item.crafting_id}`,
+
+      category: item.craftings?.category || "",
+
+      qty: Number(item.qty) || 0,
+
+      sellPrice: Number(item.sell_price) || 0,
+
+      subtotal: Number(item.subtotal) || 0,
+    })),
+  }));
+
+  console.log(
+    "Overview transactions loaded from Supabase:",
+    supabaseOverviewTransactions,
+  );
+}
+
 let overviewChartInstance = null;
 
 /* =========================================================
@@ -81,14 +189,14 @@ function overviewHero(processing, completed, totalTransactions, progress) {
           ${heroMiniCard(
             "boxes",
             "Material",
-            getMaterials().length,
+            overviewMaterialCount,
             "text-red-400",
           )}
 
           ${heroMiniCard(
             "hammer",
             "Crafting",
-            getCraftings().length,
+            overviewCraftingCount,
             "text-blue-400",
           )}
 
@@ -148,7 +256,7 @@ function heroMiniCard(icon, title, value, color = "text-white") {
 ========================================================= */
 
 function overviewPage() {
-  const transactions = getTransactions();
+  const transactions = supabaseOverviewTransactions;
 
   const now = new Date();
 
@@ -336,17 +444,17 @@ function overviewPage() {
             <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
                 ${statCard(
-                    "receipt-text",
-                    "Total Transaksi",
-                    totalTransactions,
-                    "text-red-500",
+                  "receipt-text",
+                  "Total Transaksi",
+                  totalTransactions,
+                  "text-red-500",
                 )}
 
                 ${statCard(
-                    "calendar-days",
-                    "Bulan Ini",
-                    monthlyTransactions,
-                    "text-blue-500",
+                  "calendar-days",
+                  "Bulan Ini",
+                  monthlyTransactions,
+                  "text-blue-500",
                 )}
 
                 ${statCard("clock-3", "Diproses", processing, "text-yellow-500")}
@@ -1094,7 +1202,7 @@ function emptyChartState() {
 ========================================================= */
 
 function renderOverviewChart() {
-  const transactions = getTransactions();
+  const transactions = supabaseOverviewTransactions;
 
   const canvas = document.getElementById("overviewChart");
 
@@ -1204,11 +1312,24 @@ function renderOverviewChart() {
    LOAD OVERVIEW
 ========================================================= */
 
-function loadOverview() {
+async function loadOverview() {
   setActiveMenu("menu-overview");
 
   setPageTitle("Overview");
 
+  // Loading sementara
+  document.getElementById("app").innerHTML = `
+    <div class="card">
+      <div class="text-center text-zinc-500 py-10">
+        Memuat overview...
+      </div>
+    </div>
+  `;
+
+  // Ambil transaksi terbaru dari Supabase
+  await fetchOverviewTransactionsFromSupabase();
+
+  // Render dashboard setelah data selesai
   document.getElementById("app").innerHTML = overviewPage();
 
   lucide.createIcons();
