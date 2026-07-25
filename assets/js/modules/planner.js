@@ -8,205 +8,558 @@ let productionItems = [
 let payment = {
   method: "dirty",
   cashPercent: 50,
-
   cleanMultiplier: 2,
 };
 
+/* =========================================================
+   PAGE
+========================================================= */
+
 function plannerPage() {
   return `
-    
-    <div class="card">
+    <div class="space-y-6">
 
-        <h2 class="text-2xl font-bold mb-6">
+      <!-- HEADER -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+
+        <div>
+          <h1 class="text-2xl font-black">
             Production Planner
-        </h2>
+          </h1>
 
-        <div id="plannerRows"></div>
+          <p class="text-sm text-zinc-500 mt-1">
+            Buat dan hitung kebutuhan produksi crafting.
+          </p>
+        </div>
 
-        <button
-            onclick="addPlannerRow()"
-            class="btn mt-5">
+        <div class="flex items-center gap-2 text-xs text-zinc-500">
 
-            ➕ Tambah Produksi
+          <i data-lucide="calculator" class="w-4 h-4 text-red-500"></i>
 
-        </button>
-
-    </div>
-
-    <div class="card mt-6">
-
-        <h2 class="text-2xl font-bold mb-5">
-            📦 Ringkasan Produksi
-        </h2>
-
-        <div id="plannerSummary"></div>
-
-    </div>
-
-    <div class="card mt-6">
-
-        <h2 class="text-2xl font-bold mb-5">
-            🧱 Total Material
-        </h2>
-
-        <div id="plannerResult"></div>
-
-    </div>
-
-    <div class="card mt-6">
-
-    <h2 class="text-2xl font-bold mb-5">
-        💳 Metode Pembayaran
-    </h2>
-
-    <div id="paymentMethod">
-
-        <label class="flex items-center gap-3 mb-4">
-
-            <input
-                type="radio"
-                name="payment"
-                value="dirty"
-                checked
-                onchange="changePaymentMethod('dirty')">
-
-            Full Dirty Money
-
-        </label>
-
-        <label class="flex items-center gap-3 mb-4">
-
-            <input
-                type="radio"
-                name="payment"
-                value="clean"
-                onchange="changePaymentMethod('clean')">
-
-            Full Clean Money
-
-        </label>
-
-        <label class="flex items-center gap-3 mb-4">
-
-            <input
-                type="radio"
-                name="payment"
-                value="hybrid50"
-                onchange="changePaymentMethod('hybrid50')">
-
-            Hybrid 50% / 50%
-
-        </label>
-
-        <label class="flex items-center gap-3">
-
-            <input
-                type="radio"
-                name="payment"
-                value="hybridCustom"
-                onchange="changePaymentMethod('hybridCustom')">
-
-            Hybrid Custom
-
-        </label>
-
-        <div
-            id="customPercent"
-            class="mt-5 hidden">
-
-            <label class="block mb-2">
-
-                Persentase Cash
-
-            </label>
-
-                <input
-                    id="cashPercent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value="50"
-                    class="input"
-                    oninput="changeCashPercent(this.value)">
-
-                </div>
-
-            </div>
+          Crafting Calculator
 
         </div>
 
-    <div class="card mt-6">
+      </div>
 
-    <h2 class="text-2xl font-bold mb-5">
-        📄 Ringkasan Transaksi
-    </h2>
+      <!-- TOP GRID -->
+      <div class="grid xl:grid-cols-12 gap-6 items-start">
 
-    <div class="mb-5">
+        <!-- PRODUCTION -->
+        <div class="xl:col-span-8">
 
-    <label class="block mb-2 font-medium">
-        👤 Nama Pemesan
-    </label>
+          <div class="card">
 
-    <input
-        id="customerName"
-        type="text"
-        class="input"
-        placeholder="Contoh: BLACK LINE">
+            <div class="flex items-center justify-between mb-6">
+
+              <div class="flex items-center gap-3">
+
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+
+                  <i
+                    data-lucide="clipboard-list"
+                    class="w-5 h-5 text-red-500"
+                  ></i>
+
+                </div>
+
+                <div>
+
+                  <h2 class="font-bold">
+                    Daftar Produksi
+                  </h2>
+
+                  <p class="text-xs text-zinc-500 mt-1">
+                    Pilih crafting dan jumlah yang ingin dibuat.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div
+                id="productionCount"
+                class="text-xs text-zinc-500 bg-zinc-800 px-3 py-2 rounded-lg"
+              >
+                0 Item
+              </div>
+
+            </div>
+
+            <!-- COLUMN HEADER -->
+            <div class="hidden md:grid md:grid-cols-[1fr_140px_110px] gap-3 mb-2 px-1">
+
+              <div class="text-[10px] uppercase tracking-widest text-zinc-600">
+                Crafting
+              </div>
+
+              <div class="text-[10px] uppercase tracking-widest text-zinc-600">
+                Quantity
+              </div>
+
+              <div></div>
+
+            </div>
+
+            <div id="plannerRows"></div>
+
+            <button
+              onclick="addPlannerRow()"
+              class="btn mt-3 flex items-center justify-center gap-2"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+
+              Tambah Produksi
+            </button>
+
+          </div>
+
+        </div>
+
+        <!-- PRODUCTION SUMMARY -->
+        <div class="xl:col-span-4">
+
+          <div class="card">
+
+            <div class="flex items-center gap-3 mb-6">
+
+              <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+
+                <i
+                  data-lucide="receipt-text"
+                  class="w-5 h-5 text-green-400"
+                ></i>
+
+              </div>
+
+              <div>
+
+                <h2 class="font-bold">
+                  Ringkasan Produksi
+                </h2>
+
+                <p class="text-xs text-zinc-500 mt-1">
+                  Item yang akan diproduksi.
+                </p>
+
+              </div>
+
+            </div>
+
+            <div id="plannerSummary"></div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- MATERIAL + PAYMENT -->
+      <div class="grid xl:grid-cols-2 gap-6 items-start">
+
+        <!-- MATERIAL -->
+        <div class="card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+
+              <i
+                data-lucide="boxes"
+                class="w-5 h-5 text-blue-400"
+              ></i>
+
+            </div>
+
+            <div>
+
+              <h2 class="font-bold">
+                Total Material
+              </h2>
+
+              <p class="text-xs text-zinc-500 mt-1">
+                Kebutuhan material seluruh produksi.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div id="plannerResult"></div>
+
+        </div>
+
+        <!-- PAYMENT -->
+        <div class="card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
+
+              <i
+                data-lucide="wallet-cards"
+                class="w-5 h-5 text-yellow-400"
+              ></i>
+
+            </div>
+
+            <div>
+
+              <h2 class="font-bold">
+                Metode Pembayaran
+              </h2>
+
+              <p class="text-xs text-zinc-500 mt-1">
+                Tentukan metode pembayaran transaksi.
+              </p>
+
+            </div>
+
+          </div>
+
+          <div
+            id="paymentMethod"
+            class="grid sm:grid-cols-2 gap-3"
+          >
+
+            ${paymentOption(
+              "dirty",
+              "banknote",
+              "Full Dirty",
+              "100% Dirty Money",
+              "text-red-400",
+            )}
+
+            ${paymentOption(
+              "clean",
+              "badge-dollar-sign",
+              "Full Clean",
+              "100% Clean Money",
+              "text-green-400",
+            )}
+
+            ${paymentOption(
+              "hybrid50",
+              "split",
+              "Hybrid 50 / 50",
+              "50% cash + 50% material",
+              "text-yellow-400",
+            )}
+
+            ${paymentOption(
+              "hybridCustom",
+              "sliders-horizontal",
+              "Hybrid Custom",
+              "Atur persentase sendiri",
+              "text-blue-400",
+            )}
+
+          </div>
+
+          <!-- CUSTOM PERCENT -->
+          <div
+            id="customPercent"
+            class="${payment.method === "hybridCustom" ? "" : "hidden"} mt-5 pt-5 border-t border-zinc-800"
+          >
+
+            <div class="flex items-center justify-between mb-3">
+
+              <label
+                for="cashPercent"
+                class="text-sm font-medium"
+              >
+                Persentase Cash
+              </label>
+
+              <strong
+                id="cashPercentValue"
+                class="text-red-400"
+              >
+                ${payment.cashPercent}%
+              </strong>
+
+            </div>
+
+            <input
+              id="cashPercent"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              value="${payment.cashPercent}"
+              class="w-full accent-red-600"
+              oninput="changeCashPercent(this.value)"
+            >
+
+            <div class="flex justify-between text-xs text-zinc-600 mt-2">
+
+              <span>0%</span>
+
+              <span>Cash</span>
+
+              <span>100%</span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- TRANSACTION -->
+      <div class="grid xl:grid-cols-12 gap-6 items-start">
+
+        <!-- CUSTOMER -->
+        <div class="xl:col-span-4">
+
+          <div class="card">
+
+            <div class="flex items-center gap-3 mb-6">
+
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+
+                <i
+                  data-lucide="user-round"
+                  class="w-5 h-5 text-red-400"
+                ></i>
+
+              </div>
+
+              <div>
+
+                <h2 class="font-bold">
+                  Pemesan
+                </h2>
+
+                <p class="text-xs text-zinc-500 mt-1">
+                  Identitas pemesan crafting.
+                </p>
+
+              </div>
+
+            </div>
+
+            <label
+              for="customerName"
+              class="block text-xs uppercase tracking-widest text-zinc-500 mb-2"
+            >
+              Nama Pemesan
+            </label>
+
+            <input
+              id="customerName"
+              type="text"
+              class="input"
+              placeholder="Contoh: BLACK LINE"
+            >
+
+          </div>
+
+        </div>
+
+        <!-- TRANSACTION SUMMARY -->
+        <div class="xl:col-span-8">
+
+          <div class="card">
+
+            <div class="flex items-center justify-between gap-4 mb-6">
+
+              <div class="flex items-center gap-3">
+
+                <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+
+                  <i
+                    data-lucide="file-text"
+                    class="w-5 h-5 text-green-400"
+                  ></i>
+
+                </div>
+
+                <div>
+
+                  <h2 class="font-bold">
+                    Ringkasan Transaksi
+                  </h2>
+
+                  <p class="text-xs text-zinc-500 mt-1">
+                    Pembayaran yang harus dilakukan pemesan.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+            <div id="transactionSummary"></div>
+
+            <button
+              onclick="saveTransaction()"
+              class="btn-red mt-6 w-full flex items-center justify-center gap-2"
+            >
+
+              <i
+                data-lucide="save"
+                class="w-4 h-4"
+              ></i>
+
+              Simpan Transaksi
+
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
 
     </div>
-
-    <div id="transactionSummary"></div>
-
-    <button
-        onclick="saveTransaction()"
-        class="btn mt-5 w-full">
-
-        💾 Simpan Transaksi
-
-    </button>
-
-</div>
-
-
-    <div class="card mt-6">
-
-        <h2 class="text-2xl font-bold mb-5">
-        💸 Modal Produksi
-        </h2>
-
-        <div id="plannerCost"></div>
-
-    </div>
-
-    <div class="card mt-6">
-
-        <h2 class="text-2xl font-bold mb-5">
-        📈 Profit Produksi
-        </h2>
-
-    <div id="plannerProfit"></div>
-
-</div>
-
   `;
 }
+
+/* =========================================================
+   PAYMENT OPTION
+========================================================= */
+
+function paymentOption(
+  value,
+  icon,
+  title,
+  description,
+  color = "text-red-400",
+) {
+  const active = payment.method === value;
+
+  return `
+    <label
+      class="
+        relative
+        cursor-pointer
+        rounded-xl
+        border
+        p-4
+        transition-all
+        ${
+          active
+            ? "border-red-500 bg-red-500/5"
+            : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+        }
+      "
+    >
+
+      <input
+        type="radio"
+        name="payment"
+        value="${value}"
+        ${active ? "checked" : ""}
+        onchange="changePaymentMethod('${value}')"
+        class="absolute opacity-0 pointer-events-none"
+      >
+
+      <div class="flex items-start gap-3">
+
+        <div
+          class="
+            w-9 h-9
+            rounded-lg
+            bg-zinc-800
+            flex
+            items-center
+            justify-center
+            shrink-0
+          "
+        >
+
+          <i
+            data-lucide="${icon}"
+            class="w-4 h-4 ${color}"
+          ></i>
+
+        </div>
+
+        <div class="min-w-0">
+
+          <div class="font-semibold text-sm">
+            ${title}
+          </div>
+
+          <div class="text-xs text-zinc-500 mt-1">
+            ${description}
+          </div>
+
+        </div>
+
+        ${
+          active
+            ? `
+              <div class="ml-auto">
+
+                <i
+                  data-lucide="circle-check"
+                  class="w-5 h-5 text-red-500"
+                ></i>
+
+              </div>
+            `
+            : ""
+        }
+
+      </div>
+
+    </label>
+  `;
+}
+
+/* =========================================================
+   LOAD / REFRESH
+========================================================= */
 
 function refreshPlanner() {
   renderProductionSummary();
   calculatePlanner();
-  renderProductionCost();
-  renderProductionProfit();
   renderTransactionSummary();
+  updateProductionCount();
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 }
 
 function loadPlanner() {
   setActiveMenu("menu-calculator");
 
+  if (typeof setPageTitle === "function") {
+    setPageTitle("Production Planner");
+  }
+
   document.getElementById("app").innerHTML = plannerPage();
 
   renderPlannerRows();
   refreshPlanner();
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 }
+
+function updateProductionCount() {
+  const element = document.getElementById("productionCount");
+
+  if (!element) return;
+
+  const total = productionItems.reduce((sum, item) => {
+    if (!item.craftingId) return sum;
+
+    return sum + (Number(item.qty) || 0);
+  }, 0);
+
+  element.textContent = `${total} Item`;
+}
+
+/* =========================================================
+   PRODUCTION ROW
+========================================================= */
 
 function addPlannerRow() {
   productionItems.push({
@@ -230,344 +583,392 @@ function removePlannerRow(index) {
   refreshPlanner();
 }
 
+function updatePlannerCrafting(index, value) {
+  productionItems[index].craftingId = value;
+
+  refreshPlanner();
+}
+
+function updatePlannerQty(index, value) {
+  let qty = parseInt(value);
+
+  if (isNaN(qty) || qty < 1) {
+    qty = 1;
+  }
+
+  productionItems[index].qty = qty;
+
+  refreshPlanner();
+}
+
 function renderPlannerRows() {
+  const container = document.getElementById("plannerRows");
+
+  if (!container) return;
+
   const craftings = getCraftings();
 
   let html = "";
 
   productionItems.forEach((item, index) => {
     html += `
-        <div class="grid md:grid-cols-3 gap-4 mb-4">
+      <div
+        class="
+          grid
+          md:grid-cols-[1fr_140px_110px]
+          gap-3
+          mb-3
+        "
+      >
 
-            <select
-                class="input"
-                onchange="productionItems[${index}].craftingId=this.value; refreshPlanner();">
-                <option value="">
-                    Pilih Crafting
+        <select
+          class="input"
+          onchange="updatePlannerCrafting(${index}, this.value)"
+        >
+
+          <option value="">
+            Pilih Crafting
+          </option>
+
+          ${craftings
+            .map(
+              (crafting) => `
+                <option
+                  value="${crafting.id}"
+                  ${item.craftingId == crafting.id ? "selected" : ""}
+                >
+                  ${crafting.name}
                 </option>
+              `,
+            )
+            .join("")}
 
-                ${craftings
-                  .map(
-                    (crafting) => `
-                    <option
-                        value="${crafting.id}"
-                        ${item.craftingId == crafting.id ? "selected" : ""}>
+        </select>
 
-                        ${crafting.name}
+        <input
+          type="number"
+          min="1"
+          value="${item.qty}"
+          class="input"
+          oninput="updatePlannerQty(${index}, this.value)"
+        >
 
-                    </option>
-                `,
-                  )
-                  .join("")}
+        <button
+          onclick="removePlannerRow(${index})"
+          class="btn-delete flex items-center justify-center gap-2"
+          title="Hapus"
+        >
 
-            </select>
+          <i
+            data-lucide="trash-2"
+            class="w-4 h-4"
+          ></i>
 
-            <input
-                type="number"
-                min="1"
-                value="${item.qty}"
-                class="input"
-                onchange="productionItems[${index}].qty=parseInt(this.value); refreshPlanner();">
+          <span class="md:hidden">
+            Hapus
+          </span>
 
-            <button
-                onclick="removePlannerRow(${index})"
-                class="btn-delete">
+        </button>
 
-                🗑 Hapus
-
-            </button>
-
-        </div>
-        `;
-  });
-
-  document.getElementById("plannerRows").innerHTML = html;
-}
-
-function calculatePlanner() {
-  const summary = getMaterialSummary();
-
-  let html = "";
-
-  summary.materials.forEach((material) => {
-    html += `
-<div class="border border-zinc-800 rounded-lg p-4 mb-3">
-
-    <div class="flex justify-between">
-
-        <strong>${material.name}</strong>
-
-        <strong>${material.qty}</strong>
-
-    </div>
-
-    <div class="flex justify-between text-sm text-gray-400 mt-2">
-
-        <span>
-
-            ${material.currency}
-
-            • Rp ${material.price.toLocaleString("id-ID")}
-
-        </span>
-
-        <span>
-
-            Rp ${material.subtotal.toLocaleString("id-ID")}
-
-        </span>
-
-    </div>
-
-</div>
-`;
-  });
-
-  if (html === "") {
-    html = `
-      <p class="text-gray-500">
-          Belum ada produksi.
-      </p>
+      </div>
     `;
-  }
+  });
 
-  document.getElementById("plannerResult").innerHTML = html;
+  container.innerHTML = html;
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 }
+
+/* =========================================================
+   PRODUCTION SUMMARY
+========================================================= */
 
 function renderProductionSummary() {
+  const container = document.getElementById("plannerSummary");
+
+  if (!container) return;
+
   const craftings = getCraftings();
 
   let totalQty = 0;
   let totalPrice = 0;
 
-  let html = "";
+  const rows = [];
 
   productionItems.forEach((plan) => {
-    if (plan.craftingId === "") return;
+    if (!plan.craftingId) return;
 
-    const crafting = craftings.find((c) => c.id == plan.craftingId);
+    const crafting = craftings.find((item) => item.id == plan.craftingId);
 
     if (!crafting) return;
 
-    const subtotal = crafting.sellPrice * plan.qty;
+    const qty = Number(plan.qty) || 0;
 
-    totalQty += plan.qty;
+    const subtotal = (Number(crafting.sellPrice) || 0) * qty;
+
+    totalQty += qty;
     totalPrice += subtotal;
 
-    html += `
-        <div class="flex justify-between items-center border-b border-zinc-800 py-3">
+    rows.push(`
+      <div
+        class="
+          flex
+          items-center
+          justify-between
+          gap-4
+          py-3
+          border-b border-zinc-800
+          last:border-0
+        "
+      >
 
-            <div>
+        <div class="min-w-0">
 
-                <div class="font-semibold">
-                    ${crafting.name}
-                </div>
+          <div class="font-medium truncate">
+            ${crafting.name}
+          </div>
 
-                <div class="text-sm text-gray-400">
-                    Qty : ${plan.qty}
-                </div>
-
-            </div>
-
-            <div class="font-semibold text-green-400">
-
-                Rp ${subtotal.toLocaleString("id-ID")}
-
-            </div>
+          <div class="text-xs text-zinc-500 mt-1">
+            ${qty} item
+          </div>
 
         </div>
-        `;
+
+        <strong class="text-sm text-green-400 shrink-0">
+
+          Rp ${subtotal.toLocaleString("id-ID")}
+
+        </strong>
+
+      </div>
+    `);
   });
 
-  if (html === "") {
-    html = `
-            <p class="text-gray-500">
-                Belum ada item produksi.
-            </p>
-        `;
-  } else {
-    html += `
-        <div class="mt-5 border-t border-zinc-700 pt-4 space-y-2">
+  if (rows.length === 0) {
+    container.innerHTML = `
+      <div class="py-10 text-center">
 
-            <div class="flex justify-between">
+        <div
+          class="
+            w-12 h-12
+            mx-auto
+            rounded-xl
+            bg-zinc-800
+            flex
+            items-center
+            justify-center
+          "
+        >
 
-                <span>Total Item</span>
-
-                <strong>${totalQty}</strong>
-
-            </div>
-
-            <div class="flex justify-between text-lg">
-
-                <span>Total Harga</span>
-
-                <strong class="text-green-400">
-                    Rp ${totalPrice.toLocaleString("id-ID")}
-                </strong>
-
-            </div>
+          <i
+            data-lucide="package-open"
+            class="w-5 h-5 text-zinc-600"
+          ></i>
 
         </div>
-        `;
+
+        <div class="text-sm text-zinc-500 mt-3">
+          Belum ada produksi.
+        </div>
+
+      </div>
+    `;
+
+    return;
   }
 
-  document.getElementById("plannerSummary").innerHTML = html;
+  container.innerHTML = `
+    <div>
+      ${rows.join("")}
+    </div>
+
+    <div class="border-t border-zinc-700 mt-4 pt-4 space-y-3">
+
+      <div class="flex justify-between text-sm">
+
+        <span class="text-zinc-500">
+          Total Item
+        </span>
+
+        <strong>
+          ${totalQty}
+        </strong>
+
+      </div>
+
+      <div class="flex justify-between items-end">
+
+        <span class="text-sm text-zinc-500">
+          Total Harga
+        </span>
+
+        <strong class="text-xl text-green-400">
+
+          Rp ${totalPrice.toLocaleString("id-ID")}
+
+        </strong>
+
+      </div>
+
+    </div>
+  `;
 }
 
-function renderProductionCost() {
+/* =========================================================
+   MATERIAL
+========================================================= */
+
+function calculatePlanner() {
+  const container = document.getElementById("plannerResult");
+
+  if (!container) return;
+
   const summary = getMaterialSummary();
-  const { cleanCost, dirtyCost, totalCost } = summary;
 
-  document.getElementById("plannerCost").innerHTML = `
-    
-        <div class="space-y-3">
+  if (summary.materials.length === 0) {
+    container.innerHTML = `
+      <div class="py-10 text-center">
 
-            <div class="flex justify-between">
+        <div
+          class="
+            w-12 h-12
+            mx-auto
+            rounded-xl
+            bg-zinc-800
+            flex
+            items-center
+            justify-center
+          "
+        >
 
-                <span>🟢 Clean Material</span>
-
-                <strong>
-                    Rp ${cleanCost.toLocaleString("id-ID")}
-                </strong>
-
-            </div>
-
-            <div class="flex justify-between">
-
-                <span>🔴 Dirty Material</span>
-
-                <strong>
-                    Rp ${dirtyCost.toLocaleString("id-ID")}
-                </strong>
-
-            </div>
-
-            <hr class="border-zinc-700">
-
-            <div class="flex justify-between text-lg">
-
-                <span>Total Modal</span>
-
-                <strong class="text-red-400">
-
-                    Rp ${totalCost.toLocaleString("id-ID")}
-
-                </strong>
-
-            </div>
+          <i
+            data-lucide="boxes"
+            class="w-5 h-5 text-zinc-600"
+          ></i>
 
         </div>
 
-    `;
-}
-
-function renderProductionProfit() {
-  const totalSell = getTotalSellPrice();
-
-  const { totalCost } = getMaterialSummary();
-
-  const profit = totalSell - totalCost;
-
-  document.getElementById("plannerProfit").innerHTML = `
-
-        <div class="space-y-3">
-
-            <div class="flex justify-between">
-
-                <span>Total Harga Jual</span>
-
-                <strong>
-
-                    Rp ${totalSell.toLocaleString("id-ID")}
-
-                </strong>
-
-            </div>
-
-            <div class="flex justify-between">
-
-                <span>Total Modal</span>
-
-                <strong>
-
-                    Rp ${totalCost.toLocaleString("id-ID")}
-
-                </strong>
-
-            </div>
-
-            <hr class="border-zinc-700">
-
-            <div class="flex justify-between text-xl">
-
-                <span>Profit</span>
-
-                <strong class="text-green-400">
-
-                    Rp ${profit.toLocaleString("id-ID")}
-
-                </strong>
-
-            </div>
-
+        <div class="text-sm text-zinc-500 mt-3">
+          Pilih crafting untuk melihat material.
         </div>
 
+      </div>
     `;
+
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="space-y-3">
+
+      ${summary.materials
+        .map(
+          (material) => `
+            <div
+              class="
+                flex
+                items-center
+                justify-between
+                gap-4
+                border border-zinc-800
+                rounded-xl
+                px-4 py-3
+              "
+            >
+
+              <div class="min-w-0">
+
+                <div class="font-semibold truncate">
+                  ${material.name}
+                </div>
+
+                <div class="text-xs text-zinc-500 mt-1">
+
+                  ${
+                    material.currency === "Clean"
+                      ? '<span class="text-green-400">Clean</span>'
+                      : '<span class="text-red-400">Dirty</span>'
+                  }
+
+                  • Rp ${material.price.toLocaleString("id-ID")}
+
+                </div>
+
+              </div>
+
+              <div class="text-right shrink-0">
+
+                <div class="font-black">
+                  ×${material.qty}
+                </div>
+
+                <div class="text-xs text-zinc-500 mt-1">
+
+                  Rp ${material.subtotal.toLocaleString("id-ID")}
+
+                </div>
+
+              </div>
+
+            </div>
+          `,
+        )
+        .join("")}
+
+    </div>
+  `;
 }
+
+/* =========================================================
+   PAYMENT
+========================================================= */
 
 function changePaymentMethod(method) {
   payment.method = method;
 
-  document
-    .getElementById("customPercent")
-    .classList.toggle("hidden", method !== "hybridCustom");
+  const oldCustomer = document.getElementById("customerName")?.value || "";
 
-  renderTransactionSummary();
+  document.getElementById("app").innerHTML = plannerPage();
+
+  renderPlannerRows();
+  refreshPlanner();
+
+  const customerInput = document.getElementById("customerName");
+
+  if (customerInput) {
+    customerInput.value = oldCustomer;
+  }
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
 }
 
 function changeCashPercent(value) {
   let percent = Number(value);
 
-  if (isNaN(percent)) percent = 0;
+  if (isNaN(percent)) {
+    percent = 0;
+  }
 
   percent = Math.min(100, Math.max(0, percent));
+
   payment.cashPercent = percent;
+
+  const valueElement = document.getElementById("cashPercentValue");
+
+  if (valueElement) {
+    valueElement.textContent = `${percent}%`;
+  }
 
   renderTransactionSummary();
 }
 
-function renderTransactionSummary() {
-  const transaction = getTransactionResult();
-
-  let html = "";
-
-  switch (transaction.method) {
-    case "dirty":
-      html = renderDirtyTransaction(transaction);
-      break;
-
-    case "clean":
-      html = renderCleanTransaction(transaction);
-      break;
-
-    case "hybrid50":
-      html = renderHybrid50Transaction(transaction);
-      break;
-
-    case "hybridCustom":
-      html = renderHybridCustomTransaction(transaction);
-      break;
-
-    default:
-      html = `
-        <p class="text-gray-500">
-            Metode belum dibuat.
-        </p>
-      `;
-  }
-
-  document.getElementById("transactionSummary").innerHTML = html;
-}
+/* =========================================================
+   TOTAL SELL PRICE
+========================================================= */
 
 function getTotalSellPrice() {
   const craftings = getCraftings();
@@ -575,17 +976,21 @@ function getTotalSellPrice() {
   let total = 0;
 
   productionItems.forEach((plan) => {
-    if (plan.craftingId === "") return;
+    if (!plan.craftingId) return;
 
-    const crafting = craftings.find((c) => c.id == plan.craftingId);
+    const crafting = craftings.find((item) => item.id == plan.craftingId);
 
     if (!crafting) return;
 
-    total += crafting.sellPrice * plan.qty;
+    total += (Number(crafting.sellPrice) || 0) * (Number(plan.qty) || 0);
   });
 
   return total;
 }
+
+/* =========================================================
+   TOTAL MATERIAL
+========================================================= */
 
 function getTotalMaterials() {
   const craftings = getCraftings();
@@ -595,12 +1000,12 @@ function getTotalMaterials() {
   productionItems.forEach((plan) => {
     if (!plan.craftingId) return;
 
-    const crafting = craftings.find((c) => c.id == plan.craftingId);
+    const crafting = craftings.find((item) => item.id == plan.craftingId);
 
     if (!crafting) return;
 
-    crafting.materials.forEach((item) => {
-      const qty = item.qty * plan.qty;
+    (crafting.materials || []).forEach((item) => {
+      const qty = (Number(item.qty) || 0) * (Number(plan.qty) || 0);
 
       if (!materials[item.materialId]) {
         materials[item.materialId] = 0;
@@ -613,8 +1018,13 @@ function getTotalMaterials() {
   return materials;
 }
 
+/* =========================================================
+   MATERIAL SUMMARY
+========================================================= */
+
 function getMaterialSummary() {
   const totalMaterials = getTotalMaterials();
+
   const materials = getMaterials() || [];
 
   let cleanCost = 0;
@@ -623,11 +1033,13 @@ function getMaterialSummary() {
   const detail = [];
 
   Object.entries(totalMaterials).forEach(([id, qty]) => {
-    const material = materials.find((m) => m.id == id);
+    const material = materials.find((item) => item.id == id);
 
     if (!material) return;
 
-    const subtotal = qty * material.price;
+    const price = Number(material.price) || 0;
+
+    const subtotal = qty * price;
 
     if (material.currency === "Clean") {
       cleanCost += subtotal;
@@ -640,21 +1052,22 @@ function getMaterialSummary() {
       name: material.name,
       qty,
       currency: material.currency,
-      price: material.price,
+      price,
       subtotal,
     });
   });
 
   return {
     materials: detail,
-
     cleanCost,
-
     dirtyCost,
-
     totalCost: cleanCost + dirtyCost,
   };
 }
+
+/* =========================================================
+   TRANSACTION RESULT
+========================================================= */
 
 function getTransactionResult() {
   const totalSellPrice = getTotalSellPrice();
@@ -703,8 +1116,8 @@ function getTransactionResult() {
         totalSellPrice,
         dirtyMoney: totalSellPrice * (cashPercent / 100),
         cleanMoney: 0,
-        cashPercent: cashPercent,
-        materialPercent: 100 - cashPercent,
+        cashPercent,
+        materialPercent: 50,
         cleanMultiplier: payment.cleanMultiplier,
         materials,
       };
@@ -725,11 +1138,17 @@ function getTransactionResult() {
       return {
         method: "hybridCustom",
         totalSellPrice,
+
         dirtyMoney: totalSellPrice * (payment.cashPercent / 100),
+
         cleanMoney: 0,
+
         cashPercent: payment.cashPercent,
+
         materialPercent,
+
         cleanMultiplier: payment.cleanMultiplier,
+
         materials,
       };
     }
@@ -748,31 +1167,399 @@ function getTransactionResult() {
   }
 }
 
+/* =========================================================
+   TRANSACTION SUMMARY
+========================================================= */
+
+function renderTransactionSummary() {
+  const container = document.getElementById("transactionSummary");
+
+  if (!container) return;
+
+  const transaction = getTransactionResult();
+
+  switch (transaction.method) {
+    case "dirty":
+      container.innerHTML = renderDirtyTransaction(transaction);
+      break;
+
+    case "clean":
+      container.innerHTML = renderCleanTransaction(transaction);
+      break;
+
+    case "hybrid50":
+      container.innerHTML = renderHybrid50Transaction(transaction);
+      break;
+
+    case "hybridCustom":
+      container.innerHTML = renderHybridCustomTransaction(transaction);
+      break;
+
+    default:
+      container.innerHTML = `
+        <p class="text-zinc-500">
+          Metode belum dibuat.
+        </p>
+      `;
+  }
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
+}
+
+/* =========================================================
+   DIRTY TRANSACTION
+========================================================= */
+
+function renderDirtyTransaction(transaction) {
+  return `
+    <div class="space-y-4">
+
+      <div
+        class="
+          flex
+          items-center
+          justify-between
+          gap-4
+          border border-zinc-800
+          rounded-xl
+          p-4
+        "
+      >
+
+        <div>
+
+          <div class="text-xs text-zinc-500">
+            Metode
+          </div>
+
+          <div class="font-semibold mt-1">
+            Full Dirty Money
+          </div>
+
+        </div>
+
+        <div
+          class="
+            w-10 h-10
+            rounded-xl
+            bg-red-500/10
+            flex
+            items-center
+            justify-center
+          "
+        >
+
+          <i
+            data-lucide="banknote"
+            class="w-5 h-5 text-red-400"
+          ></i>
+
+        </div>
+
+      </div>
+
+      ${transactionTotalRow(
+        "Dirty Money",
+        transaction.dirtyMoney,
+        "text-red-400",
+      )}
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   CLEAN TRANSACTION
+========================================================= */
+
+function renderCleanTransaction(transaction) {
+  return `
+    <div class="space-y-4">
+
+      <div
+        class="
+          flex
+          items-center
+          justify-between
+          gap-4
+          border border-zinc-800
+          rounded-xl
+          p-4
+        "
+      >
+
+        <div>
+
+          <div class="text-xs text-zinc-500">
+            Metode
+          </div>
+
+          <div class="font-semibold mt-1">
+            Full Clean Money
+          </div>
+
+        </div>
+
+        <div class="text-right">
+
+          <div class="text-xs text-zinc-500">
+            Multiplier
+          </div>
+
+          <strong class="text-green-400">
+            ×${transaction.cleanMultiplier}
+          </strong>
+
+        </div>
+
+      </div>
+
+      ${transactionTotalRow(
+        "Clean Money",
+        transaction.cleanMoney,
+        "text-green-400",
+      )}
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   HYBRID 50
+========================================================= */
+
+function renderHybrid50Transaction(transaction) {
+  return `
+    <div class="space-y-5">
+
+      <div class="grid sm:grid-cols-2 gap-3">
+
+        ${smallTransactionStat("Cash", `${transaction.cashPercent}%`)}
+
+        ${smallTransactionStat("Material", `${transaction.materialPercent}%`)}
+
+      </div>
+
+      ${transactionTotalRow(
+        "Dirty Money",
+        transaction.dirtyMoney,
+        "text-red-400",
+      )}
+
+      ${renderTransactionMaterials(transaction.materials)}
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   HYBRID CUSTOM
+========================================================= */
+
+function renderHybridCustomTransaction(transaction) {
+  return `
+    <div class="space-y-5">
+
+      <div class="grid sm:grid-cols-2 gap-3">
+
+        ${smallTransactionStat("Cash", `${transaction.cashPercent}%`)}
+
+        ${smallTransactionStat("Material", `${transaction.materialPercent}%`)}
+
+      </div>
+
+      ${transactionTotalRow(
+        "Dirty Money",
+        transaction.dirtyMoney,
+        "text-red-400",
+      )}
+
+      ${renderTransactionMaterials(transaction.materials)}
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   TRANSACTION COMPONENTS
+========================================================= */
+
+function smallTransactionStat(label, value) {
+  return `
+    <div
+      class="
+        border border-zinc-800
+        bg-zinc-900
+        rounded-xl
+        p-4
+      "
+    >
+
+      <div class="text-xs text-zinc-500">
+        ${label}
+      </div>
+
+      <div class="text-xl font-black mt-1">
+        ${value}
+      </div>
+
+    </div>
+  `;
+}
+
+function transactionTotalRow(label, value, color) {
+  return `
+    <div
+      class="
+        flex
+        items-center
+        justify-between
+        gap-5
+        bg-zinc-900
+        border border-zinc-800
+        rounded-xl
+        p-4
+      "
+    >
+
+      <div class="text-sm text-zinc-400">
+        ${label}
+      </div>
+
+      <strong class="text-xl ${color}">
+        Rp ${Number(value || 0).toLocaleString("id-ID")}
+      </strong>
+
+    </div>
+  `;
+}
+
+function renderTransactionMaterials(materials) {
+  if (!materials || materials.length === 0) {
+    return `
+      <div
+        class="
+          border border-zinc-800
+          rounded-xl
+          p-4
+          text-sm
+          text-zinc-500
+        "
+      >
+        Tidak ada material yang harus dibawa.
+      </div>
+    `;
+  }
+
+  return `
+    <div>
+
+      <div
+        class="
+          text-xs
+          uppercase
+          tracking-widest
+          text-zinc-500
+          mb-3
+        "
+      >
+        Material yang harus dibawa
+      </div>
+
+      <div
+        class="
+          border border-zinc-800
+          rounded-xl
+          divide-y divide-zinc-800
+        "
+      >
+
+        ${materials
+          .map(
+            (material) => `
+              <div
+                class="
+                  flex
+                  items-center
+                  justify-between
+                  gap-4
+                  px-4 py-3
+                "
+              >
+
+                <div>
+
+                  <div class="text-sm font-medium">
+                    ${material.name}
+                  </div>
+
+                  <div class="text-xs text-zinc-600 mt-1">
+                    ${material.currency}
+                  </div>
+
+                </div>
+
+                <strong>
+                  ×${material.qty}
+                </strong>
+
+              </div>
+            `,
+          )
+          .join("")}
+
+      </div>
+
+    </div>
+  `;
+}
+
+/* =========================================================
+   SAVE TRANSACTION
+========================================================= */
+
 function saveTransaction() {
-  const customer = document.getElementById("customerName").value.trim();
+  const customerInput = document.getElementById("customerName");
+
+  const customer = customerInput?.value.trim() || "";
 
   if (customer === "") {
     alert("Nama pemesan wajib diisi.");
+    customerInput?.focus();
     return;
   }
-
-  const transactions = getTransactions();
-
-  const transaction = getTransactionResult();
 
   const craftings = getCraftings();
 
   const items = productionItems
-    .filter((item) => item.craftingId !== "")
+    .filter((item) => item.craftingId !== "" && Number(item.qty) > 0)
     .map((item) => {
-      const crafting = craftings.find((c) => c.id == item.craftingId);
+      const crafting = craftings.find(
+        (crafting) => crafting.id == item.craftingId,
+      );
+
+      if (!crafting) {
+        return null;
+      }
 
       return {
         id: crafting.id,
         name: crafting.name,
-        qty: item.qty,
+        qty: Number(item.qty),
       };
-    });
+    })
+    .filter(Boolean);
+
+  if (items.length === 0) {
+    alert("Pilih minimal satu crafting terlebih dahulu.");
+    return;
+  }
+
+  const transaction = getTransactionResult();
+
+  const transactions = getTransactions();
 
   transactions.push({
     id: Date.now(),
@@ -791,155 +1578,27 @@ function saveTransaction() {
   saveTransactions(transactions);
 
   alert("Transaksi berhasil disimpan.");
+
+  resetPlanner();
 }
 
-function renderDirtyTransaction(transaction) {
-  return `
-    <div class="space-y-3">
+/* =========================================================
+   RESET
+========================================================= */
 
-        <div class="flex justify-between">
-            <span>Metode</span>
-            <strong>Full Dirty Money</strong>
-        </div>
+function resetPlanner() {
+  productionItems = [
+    {
+      craftingId: "",
+      qty: 1,
+    },
+  ];
 
-        <hr class="border-zinc-700">
+  payment = {
+    method: "dirty",
+    cashPercent: 50,
+    cleanMultiplier: 2,
+  };
 
-        <div class="flex justify-between text-lg">
-            <span>🔴 Dirty Money</span>
-
-            <strong class="text-red-400">
-                Rp ${transaction.dirtyMoney.toLocaleString("id-ID")}
-            </strong>
-
-        </div>
-
-    </div>
-    `;
-}
-
-function renderCleanTransaction(transaction) {
-  return `
-    <div class="space-y-3">
-
-        <div class="flex justify-between">
-            <span>Metode</span>
-            <strong>Full Clean Money</strong>
-        </div>
-
-        <hr class="border-zinc-700">
-
-        <div class="flex justify-between">
-            <span>Multiplier</span>
-            <strong>x${transaction.cleanMultiplier}</strong>
-        </div>
-
-        <div class="flex justify-between text-lg">
-
-            <span>🟢 Clean Money</span>
-
-            <strong class="text-green-400">
-                Rp ${transaction.cleanMoney.toLocaleString("id-ID")}
-            </strong>
-
-        </div>
-
-    </div>
-    `;
-}
-
-function renderHybrid50Transaction(transaction) {
-  let materialHTML = "";
-
-  transaction.materials.forEach((material) => {
-    materialHTML += `
-        <div class="flex justify-between">
-            <span>${material.name}</span>
-            <strong>${material.qty}</strong>
-        </div>
-    `;
-  });
-
-  return `
-    <div class="space-y-4">
-
-        <div class="flex justify-between">
-            <span>Metode</span>
-            <strong>Hybrid 50%</strong>
-        </div>
-
-        <hr class="border-zinc-700">
-
-        <div class="flex justify-between">
-            <span>🔴 Dirty Money</span>
-
-            <strong class="text-red-400">
-                Rp ${transaction.dirtyMoney.toLocaleString("id-ID")}
-            </strong>
-
-        </div>
-
-        <hr class="border-zinc-700">
-
-        <h3 class="font-semibold">
-            Material yang harus dibawa
-        </h3>
-
-        ${materialHTML}
-
-    </div>
-    `;
-}
-
-function renderHybridCustomTransaction(transaction) {
-  let materialHTML = "";
-
-  transaction.materials.forEach((material) => {
-    materialHTML += `
-        <div class="flex justify-between">
-            <span>${material.name}</span>
-            <strong>${material.qty}</strong>
-        </div>
-    `;
-  });
-
-  return `
-    <div class="space-y-4">
-
-        <div class="flex justify-between">
-            <span>Metode</span>
-            <strong>Hybrid Custom</strong>
-        </div>
-
-        <div class="flex justify-between">
-            <span>Cash</span>
-            <strong>${transaction.cashPercent}%</strong>
-        </div>
-
-        <div class="flex justify-between">
-            <span>Material</span>
-            <strong>${transaction.materialPercent}%</strong>
-        </div>
-
-        <hr class="border-zinc-700">
-
-        <div class="flex justify-between">
-
-            <span>🔴 Dirty Money</span>
-
-            <strong class="text-red-400">
-                Rp ${transaction.dirtyMoney.toLocaleString("id-ID")}
-            </strong>
-
-        </div>
-
-        <hr class="border-zinc-700">
-
-        <h3 class="font-semibold">
-            Material yang harus dibawa
-        </h3>
-
-        ${materialHTML}
-
-    </div>
-    `;
+  loadPlanner();
 }

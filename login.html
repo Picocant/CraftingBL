@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
+    <title>Login | BLACK LINE</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      body {
+        background:
+          radial-gradient(
+            circle at top right,
+            rgba(127, 29, 29, 0.2),
+            transparent 35%
+          ),
+          #09090b;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen text-white">
+    <div class="min-h-screen flex items-center justify-center px-6">
+      <div
+        class="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl"
+      >
+        <!-- LOGO -->
+        <div class="text-center mb-8">
+          <div
+            class="w-16 h-16 mx-auto mb-5 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-900/30"
+          >
+            <i data-lucide="shield" class="w-8 h-8"></i>
+          </div>
+
+          <h1 class="text-3xl font-bold">BLACK LINE</h1>
+
+          <p class="text-zinc-400 mt-2">
+            Crafting Calculator Management
+          </p>
+        </div>
+
+        <!-- FORM -->
+        <form id="loginForm" class="space-y-5">
+          <div>
+            <label class="block text-sm text-zinc-400 mb-2">
+              Email
+            </label>
+
+            <input
+              id="loginEmail"
+              type="email"
+              autocomplete="email"
+              placeholder="email@example.com"
+              required
+              class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm text-zinc-400 mb-2">
+              Password
+            </label>
+
+            <input
+              id="loginPassword"
+              type="password"
+              autocomplete="current-password"
+              placeholder="••••••••"
+              required
+              class="w-full px-4 py-3 rounded-xl bg-zinc-950 border border-zinc-800 outline-none focus:border-red-500"
+            />
+          </div>
+
+          <div
+            id="loginError"
+            class="hidden p-3 rounded-xl bg-red-950/50 border border-red-900 text-red-400 text-sm"
+          ></div>
+
+          <button
+            id="loginButton"
+            type="submit"
+            class="w-full bg-red-600 hover:bg-red-700 px-4 py-3 rounded-xl font-semibold transition"
+          >
+            Login
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="assets/js/config/supabase.js"></script>
+
+    <script src="assets/js/core/auth.js"></script>
+
+    <script src="assets/js/login.js"></script>
+
+    <script>
+      lucide.createIcons();
+    </script>
+  </body>
+</html>

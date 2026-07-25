@@ -15,114 +15,171 @@
 
   <body class="bg-zinc-950 text-white">
     <div class="flex h-screen overflow-hidden">
-      <!-- Sidebar -->
+      <!-- SIDEBAR -->
       <aside
-        class="w-80 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0"
+        id="sidebar"
+        class="sidebar bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0"
       >
-        <!-- Logo -->
-        <div class="p-6 border-b border-zinc-800">
-          <div class="flex items-center gap-4">
+        <!-- LOGO -->
+        <div class="sidebar-header border-b border-zinc-800">
+          <div class="flex items-center">
             <div
-              class="w-12 h-12 rounded-2xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/30"
+              class="sidebar-logo w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/30 shrink-0"
             >
-              <i data-lucide="shield" class="w-7 h-7"></i>
+              <i data-lucide="shield" class="w-6 h-6"></i>
             </div>
 
-            <div>
-              <h1 class="text-2xl font-black tracking-wide">BLACK LINE</h1>
+            <div class="sidebar-brand ml-4 min-w-0">
+              <h1 class="text-xl font-black tracking-wide whitespace-nowrap">
+                BLACK LINE
+              </h1>
 
-              <p class="text-sm text-zinc-500">Crafting Calculator</p>
+              <p class="text-xs text-zinc-500 whitespace-nowrap">
+                Crafting Calculator
+              </p>
             </div>
           </div>
         </div>
 
-        <!-- Menu -->
-        <nav class="flex-1 px-4 py-6 space-y-2">
+        <!-- MENU -->
+        <nav class="flex-1 px-3 py-5 space-y-2 overflow-hidden">
           <button
             id="menu-overview"
             class="menu-item active"
             onclick="loadOverview()"
+            title="Overview"
           >
             <i data-lucide="layout-dashboard"></i>
-            <span>Overview</span>
+
+            <span class="menu-text"> Overview </span>
           </button>
 
           <button
             id="menu-calculator"
             class="menu-item"
             onclick="loadPlanner()"
+            title="Production Planner"
           >
             <i data-lucide="clipboard-list"></i>
-            <span>Production Planner</span>
+
+            <span class="menu-text"> Production Planner </span>
           </button>
 
           <button
             id="menu-transactions"
             class="menu-item"
+            data-access="admin"
             onclick="loadTransactions()"
+            title="Transactions"
           >
             <i data-lucide="receipt-text"></i>
-            <span>Transactions</span>
+
+            <span class="menu-text"> Transactions </span>
           </button>
 
           <button
             id="menu-material"
             class="menu-item"
+            data-access="admin"
             onclick="loadMaterials()"
+            title="Materials"
           >
             <i data-lucide="boxes"></i>
-            <span>Materials</span>
+
+            <span class="menu-text"> Materials </span>
           </button>
 
           <button
             id="menu-crafting"
             class="menu-item"
+            data-access="admin"
             onclick="loadCraftings()"
+            title="Craftings"
           >
             <i data-lucide="hammer"></i>
-            <span>Craftings</span>
+
+            <span class="menu-text"> Craftings </span>
           </button>
 
-          <button id="menu-settings" class="menu-item" onclick="loadSettings()">
+          <button
+            id="menu-settings"
+            class="menu-item"
+            data-access="admin"
+            onclick="loadSettings()"
+            title="Settings"
+          >
             <i data-lucide="settings"></i>
-            <span>Settings</span>
+
+            <span class="menu-text"> Settings </span>
           </button>
         </nav>
 
-        <!-- Footer -->
-        <div class="border-t border-zinc-800 p-5">
-          <div class="text-xs uppercase tracking-widest text-zinc-500">
-            Version
-          </div>
+        <!-- FOOTER -->
+        <div class="sidebar-footer border-t border-zinc-800">
+          <div class="sidebar-footer-content">
+            <div class="text-xs uppercase tracking-widest text-zinc-500">
+              Version
+            </div>
 
-          <div class="mt-2 text-lg font-bold">v1.0.0</div>
+            <div class="mt-2 text-lg font-bold">v1.0.0</div>
 
-          <div class="mt-3 text-xs text-zinc-600">
-            Made with ❤️ by BLACK LINE
+            <div class="mt-3 text-xs text-zinc-600 whitespace-nowrap">
+              Made with ❤️ by BLACK LINE
+            </div>
           </div>
         </div>
       </aside>
 
-      <!-- Main -->
+      <!-- MAIN -->
       <main class="flex-1 min-w-0 flex flex-col overflow-hidden">
+        <!-- HEADER -->
         <header
-          class="bg-zinc-900 border-b border-zinc-800 px-8 py-5 flex items-center justify-between"
+          class="bg-zinc-900 border-b border-zinc-800 px-6 py-4 flex items-center justify-between"
         >
-          <h2 id="pageTitle" class="text-2xl font-bold">Overview</h2>
+          <div class="flex items-center gap-4">
+            <!-- SIDEBAR TOGGLE -->
+            <button
+              id="sidebarToggle"
+              onclick="toggleSidebar()"
+              class="w-10 h-10 rounded-xl border border-zinc-800 bg-zinc-950 hover:bg-zinc-800 hover:border-zinc-700 flex items-center justify-center transition-all"
+              title="Toggle Sidebar"
+            >
+              <i
+                id="sidebarToggleIcon"
+                data-lucide="panel-left-close"
+                class="w-5 h-5"
+              ></i>
+            </button>
+
+            <h2 id="pageTitle" class="text-xl font-bold">Overview</h2>
+          </div>
         </header>
 
+        <!-- CONTENT -->
         <section class="flex-1 overflow-y-auto p-8">
           <div id="app"></div>
         </section>
       </main>
     </div>
 
-    <!-- Scripts -->
+    <!-- SCRIPTS -->
+
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/config/supabase.js"></script>
+
+    <!-- CONFIG -->
     <script src="assets/js/config/webhooks.js"></script>
+
+    <!-- CORE -->
+    <script src="assets/js/core/auth.js"></script>
     <script src="assets/js/core/storage.js"></script>
+
+    <!-- SERVICES -->
     <script src="assets/js/services/discord.js"></script>
     <script src="assets/js/services/discordEmbeds.js"></script>
 
+    <!-- MODULES -->
     <script src="assets/js/modules/material.js"></script>
     <script src="assets/js/modules/crafting.js"></script>
     <script src="assets/js/modules/planner.js"></script>
@@ -130,6 +187,7 @@
     <script src="assets/js/modules/settings.js"></script>
     <script src="assets/js/modules/overview.js"></script>
 
+    <!-- APP -->
     <script src="assets/js/app.js"></script>
   </body>
 </html>

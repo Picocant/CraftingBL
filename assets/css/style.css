@@ -1,39 +1,222 @@
 body {
   font-family: Poppins, sans-serif;
-
   background: #09090b;
-
   color: white;
 }
 
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+  width: 280px;
+  transition: width 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 20px;
+  transition: padding 0.3s ease;
+}
+
+.sidebar-brand {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  transition:
+    opacity 0.2s ease,
+    transform 0.3s ease,
+    visibility 0.2s ease;
+}
+
+.sidebar-logo {
+  transition: all 0.3s ease;
+}
+
+.menu-text {
+  opacity: 1;
+  visibility: visible;
+  white-space: nowrap;
+  transition:
+    opacity 0.15s ease,
+    visibility 0.15s ease;
+}
+
+.sidebar-footer {
+  padding: 20px;
+  overflow: hidden;
+}
+
+.sidebar-footer-content {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+/* =========================================================
+   SIDEBAR COLLAPSED
+========================================================= */
+
+.sidebar.collapsed {
+  width: 84px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 20px 16px;
+}
+
+.sidebar.collapsed .sidebar-header > div {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-brand {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-10px);
+}
+
+.sidebar.collapsed .sidebar-logo {
+  width: 44px;
+  height: 44px;
+}
+
+.sidebar.collapsed nav {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.sidebar.collapsed .menu-item {
+  justify-content: center;
+  gap: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.collapsed .menu-text {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sidebar.collapsed .menu-item:hover {
+  transform: none;
+}
+
+.sidebar.collapsed .menu-item.active::before {
+  left: -12px;
+}
+
+.sidebar.collapsed .sidebar-footer {
+  padding: 0;
+  height: 0;
+  border-top-color: transparent;
+}
+
+.sidebar.collapsed .sidebar-footer-content {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* =========================================================
+   MENU
+========================================================= */
+
 .menu {
   width: 100%;
-
   text-align: left;
-
   padding: 14px 18px;
-
   border-radius: 12px;
-
   color: #d4d4d4;
-
   transition: 0.25s;
 }
 
 .menu:hover {
   background: #27272a;
-
   color: white;
 }
 
 .active {
   background: #b91c1c;
-
   color: white;
 }
 
+.menu-item {
+  position: relative;
+
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 14px;
+
+  padding: 14px 18px;
+
+  border-radius: 14px;
+
+  color: #d4d4d8;
+
+  transition:
+    background 0.25s ease,
+    color 0.25s ease,
+    transform 0.25s ease;
+
+  font-weight: 500;
+
+  overflow: hidden;
+}
+
+.menu-item > svg {
+  width: 20px;
+  height: 20px;
+
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+.menu-item:hover {
+  background: #27272a;
+  color: #fff;
+  transform: translateX(4px);
+}
+
+.menu-item.active {
+  background: #dc2626;
+  color: #fff;
+}
+
+.menu-item.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: -12px;
+
+  top: 12px;
+  bottom: 12px;
+
+  width: 4px;
+
+  border-radius: 20px;
+
+  background: #ef4444;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
 .card {
-  background: linear-gradient(180deg, #18181b 0%, #141417 100%);
+  background: linear-gradient(
+    180deg,
+    #18181b 0%,
+    #141417 100%
+  );
 
   border: 1px solid #27272a;
 
@@ -58,23 +241,23 @@ body {
 
 .card h3 {
   color: #a1a1aa;
-
   font-size: 15px;
 }
 
 .card h1 {
   font-size: 38px;
-
   font-weight: bold;
-
   margin-top: 10px;
 }
 
 .card p {
   margin-top: 10px;
-
   color: #71717a;
 }
+
+/* =========================================================
+   INPUT
+========================================================= */
 
 .input {
   width: 100%;
@@ -100,12 +283,22 @@ body {
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.15);
 }
 
+/* =========================================================
+   BUTTON
+========================================================= */
+
 .btn-red {
   background: #dc2626;
 
   padding: 14px 22px;
 
   border-radius: 12px;
+
+  transition: 0.25s;
+}
+
+.btn-red:hover {
+  background: #ef4444;
 }
 
 .btn {
@@ -128,58 +321,32 @@ body {
   padding: 10px 18px;
 
   border-radius: 10px;
-}
-
-.menu-item {
-  position: relative;
-
-  width: 100%;
-
-  display: flex;
-
-  align-items: center;
-
-  gap: 14px;
-
-  padding: 14px 18px;
-
-  border-radius: 14px;
-
-  color: #d4d4d8;
 
   transition: 0.25s;
-
-  font-weight: 500;
 }
 
-.menu-item:hover {
-  background: #27272a;
-
-  color: #fff;
-
-  transform: translateX(6px);
+.btn-delete:hover {
+  background: #b91c1c;
 }
 
-.menu-item.active {
-  background: #dc2626;
+/* =========================================================
+   SCROLLBAR
+========================================================= */
 
-  color: #fff;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.menu-item.active::before {
-  content: "";
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
 
-  position: absolute;
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 999px;
+}
 
-  left: -12px;
-
-  top: 12px;
-
-  bottom: 12px;
-
-  width: 4px;
-
-  border-radius: 20px;
-
-  background: #ef4444;
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
 }

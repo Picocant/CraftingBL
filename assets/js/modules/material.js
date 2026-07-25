@@ -1,4 +1,23 @@
 let editingMaterialId = null;
+let supabaseMaterials = [];
+
+
+async function fetchMaterialsFromSupabase() {
+  const { data, error } = await supabaseClient
+    .from("materials")
+    .select("id, name, price, currency")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Gagal mengambil materials:", error);
+    supabaseMaterials = [];
+    return;
+  }
+
+  supabaseMaterials = data || [];
+
+  console.log("Materials loaded from Supabase:", supabaseMaterials);
+}
 
 function resetMaterialForm() {
   editingMaterialId = null;
@@ -194,9 +213,13 @@ function editMaterial(id) {
 }
 
 function renderMaterials() {
-  const keyword = document.getElementById("searchMaterial").value.toLowerCase();
+  const searchInput = document.getElementById("searchMaterial");
 
-  const data = getMaterials();
+  if (!searchInput) return;
+
+  const keyword = searchInput.value.toLowerCase();
+
+  const data = supabaseMaterials;
 
   let html = "";
 
@@ -205,27 +228,20 @@ function renderMaterials() {
     .sort((a, b) => a.name.localeCompare(b.name, "id"))
     .forEach((item) => {
       html += `
-
         <div class="border border-zinc-800 rounded-xl p-5 mb-3 flex justify-between items-center">
 
             <div>
 
                 <h3 class="font-bold text-lg">
-
                     ${item.name}
-
                 </h3>
 
                 <p>
-
-                    ${item.currency == "Clean" ? "🟢 Clean" : "🔴 Dirty"}
-
+                    ${item.currency === "Clean" ? "🟢 Clean" : "🔴 Dirty"}
                 </p>
 
                 <p>
-
-                    Rp ${item.price.toLocaleString()}
-
+                    Rp ${Number(item.price).toLocaleString("id-ID")}
                 </p>
 
             </div>
@@ -233,29 +249,31 @@ function renderMaterials() {
             <div class="space-x-2">
 
                 <button
-                onclick="editMaterial(${item.id})"
-                class="btn">
-
-                Edit
-
+                    onclick="editMaterial(${item.id})"
+                    class="btn">
+                    Edit
                 </button>
 
                 <button
-                onclick="deleteMaterial(${item.id})"
-                class="btn-delete">
-
-                Hapus
-
+                    onclick="deleteMaterial(${item.id})"
+                    class="btn-delete">
+                    Hapus
                 </button>
 
             </div>
 
         </div>
-
-        `;
+      `;
     });
 
-  document.getElementById("materialList").innerHTML = html;
+  document.getElementById("materialList").innerHTML =
+    html ||
+    `
+      <div class="text-center text-zinc-500 py-8">
+        Material tidak ditemukan.
+      </div>
+    `;
+
   document.getElementById("materialCount").textContent =
     `${data.length} Material`;
 }
@@ -270,11 +288,21 @@ function deleteMaterial(id) {
   renderMaterials();
 }
 
-function loadMaterials() {
+async function loadMaterials() {
   setActiveMenu("menu-material");
   setPageTitle("Materials");
+
   document.getElementById("app").innerHTML = materialPage();
 
+  document.getElementById("materialList").innerHTML = `
+    <div class="text-center text-zinc-500 py-8">
+      Memuat material...
+    </div>
+  `;
+
+  await fetchMaterialsFromSupabase();
+
   renderMaterials();
+
   lucide.createIcons();
 }
