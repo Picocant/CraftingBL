@@ -123,3 +123,27 @@ async function initializeAuth() {
 function isAdmin() {
   return currentRole === "admin";
 }
+
+async function logout() {
+  const confirmed = confirm("Yakin ingin logout dari Admin?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signOut();
+
+  if (error) {
+    console.error("Logout gagal:", error);
+    alert("Logout gagal.");
+    return;
+  }
+
+  // Reset state aplikasi
+  currentUser = null;
+  currentProfile = null;
+  currentRole = "public";
+
+  // Kembali sebagai public
+  window.location.href = "index.html";
+}

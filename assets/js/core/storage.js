@@ -5,7 +5,7 @@
 const STORAGE_KEY = "mafia_materials";
 const CRAFTING_KEY = "mafia_craftings";
 const TRANSACTION_KEY = "transactions";
-const WEBHOOK_KEY = "discordWebhooks";
+
 
 /* =========================================================
    SAFE STORAGE
@@ -84,38 +84,6 @@ function saveTransactions(transactions) {
   );
 }
 
-/* =========================================================
-   WEBHOOKS
-========================================================= */
-
-function getWebhooks() {
-  const defaults = {};
-
-  if (typeof WEBHOOK_TYPES !== "undefined" && Array.isArray(WEBHOOK_TYPES)) {
-    WEBHOOK_TYPES.forEach((type) => {
-      defaults[type.key] = "";
-    });
-  }
-
-  const saved = safeGetStorage(WEBHOOK_KEY, {});
-
-  if (!saved || typeof saved !== "object" || Array.isArray(saved)) {
-    return defaults;
-  }
-
-  return {
-    ...defaults,
-    ...saved,
-  };
-}
-
-function saveWebhooks(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    return false;
-  }
-
-  return safeSaveStorage(WEBHOOK_KEY, data);
-}
 
 /* =========================================================
    BACKUP
@@ -131,7 +99,6 @@ function createBackupData() {
       materials: getMaterials(),
       craftings: getCraftings(),
       transactions: getTransactions(),
-      webhooks: getWebhooks(),
     },
   };
 }
@@ -213,7 +180,6 @@ function importBackupFile(file) {
       const materials = backup.data.materials;
       const craftings = backup.data.craftings;
       const transactions = backup.data.transactions;
-      const webhooks = backup.data.webhooks;
 
       if (
         !Array.isArray(materials) ||
@@ -222,16 +188,6 @@ function importBackupFile(file) {
       ) {
         throw new Error(
           "Struktur data backup tidak valid.",
-        );
-      }
-
-      if (
-        !webhooks ||
-        typeof webhooks !== "object" ||
-        Array.isArray(webhooks)
-      ) {
-        throw new Error(
-          "Data webhook backup tidak valid.",
         );
       }
 
@@ -252,14 +208,10 @@ function importBackupFile(file) {
       const transactionSaved =
         saveTransactions(transactions);
 
-      const webhookSaved =
-        saveWebhooks(webhooks);
-
       if (
         !materialSaved ||
         !craftingSaved ||
-        !transactionSaved ||
-        !webhookSaved
+        !transactionSaved
       ) {
         throw new Error(
           "Sebagian data gagal disimpan.",

@@ -7,6 +7,7 @@ async function fetchTransactionsFromSupabase() {
       `
       id,
       created_at,
+      order_date,
       customer,
       payment_method,
       total_sell_price,
@@ -118,7 +119,7 @@ function renderTransactions() {
               </div>
 
               <div class="text-sm text-zinc-400">
-                ${new Date(item.created_at).toLocaleString("id-ID")}
+                ${new Date(item.order_date).toLocaleString("id-ID")}
               </div>
 
             </div>
@@ -150,7 +151,7 @@ function formatPaymentMethod(method) {
     dirty: "FULL DIRTY MONEY",
     clean: "FULL CLEAN MONEY",
     hybrid50: "HYBRID 50 / 50",
-    custom: "HYBRID CUSTOM",
+    hybridCustom: "HYBRID CUSTOM",
   };
 
   return methods[method] || String(method || "-").toUpperCase();
@@ -301,10 +302,10 @@ function showTransaction(id) {
         </div>
 
         <div class="flex justify-between">
-          <span>Tanggal</span>
+          <span>Tanggal Pemesanan</span>
 
           <strong>
-            ${new Date(item.created_at).toLocaleString("id-ID")}
+            ${new Date(item.order_date).toLocaleString("id-ID")}
           </strong>
         </div>
 
@@ -315,6 +316,49 @@ function showTransaction(id) {
             ${formatPaymentMethod(item.payment_method)}
           </strong>
         </div>
+        ${
+          item.payment_method === "hybridCustom"
+            ? `
+      <div
+        class="
+          mt-3
+          p-4
+          rounded-xl
+          border border-blue-500/20
+          bg-blue-500/5
+        "
+      >
+        <div class="text-xs text-zinc-500 mb-3">
+          Pembagian Pembayaran
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+
+          <div>
+            <div class="text-xs text-zinc-500">
+              Cash / Dirty Money
+            </div>
+
+            <div class="font-bold text-red-400 mt-1">
+              ${Number(item.cash_percent) || 0}%
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs text-zinc-500">
+              Material
+            </div>
+
+            <div class="font-bold text-blue-400 mt-1">
+              ${Number(item.material_percent) || 0}%
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `
+            : ""
+        }
 
       </div>
 
@@ -391,7 +435,7 @@ function showTransaction(id) {
   </button>
 
   ${
-    item.status !== "Selesai"
+    isAdmin() && item.status !== "Selesai"
       ? `
         <button
           onclick="finishTransaction(${item.id})"
@@ -450,6 +494,11 @@ async function deleteTransaction(id) {
 }
 
 async function finishTransaction(id) {
+  if (!isAdmin()) {
+    alert("Akses ditolak. Hanya admin yang dapat menyelesaikan transaksi.");
+    return;
+  }
+
   if (!confirm("Selesaikan transaksi ini?")) {
     return;
   }
@@ -487,6 +536,10 @@ async function sendTransactionDiscord(id) {
   }
 
   const transaction = {
+    customer: item.customer || "-",
+
+    orderDate: item.order_date || null,
+
     method: item.payment_method,
 
     totalSellPrice: Number(item.total_sell_price) || 0,
@@ -500,6 +553,15 @@ async function sendTransactionDiscord(id) {
     materialPercent: Number(item.material_percent) || 0,
 
     cleanMultiplier: Number(item.clean_multiplier) || 0,
+
+    items: (item.transaction_items || []).map((transactionItem) => ({
+      id: transactionItem.crafting_id,
+      name: transactionItem.craftings?.name || "Unknown Item",
+      category: transactionItem.craftings?.category || "-",
+      qty: Number(transactionItem.qty) || 0,
+      sellPrice: Number(transactionItem.sell_price) || 0,
+      subtotal: Number(transactionItem.subtotal) || 0,
+    })),
 
     materials: (item.transaction_materials || []).map((material) => ({
       id: material.material_id,
@@ -518,12 +580,4 @@ async function sendTransactionDiscord(id) {
   if (success) {
     alert("Transaksi berhasil dikirim ke Discord.");
   }
-}
-
-function getWebhook() {
-  return localStorage.getItem("discordWebhook") || "";
-}
-
-function saveWebhook(url) {
-  localStorage.setItem("discordWebhook", url);
 }

@@ -1,90 +1,8 @@
 function settingsPage() {
-  const webhooks = getWebhooks();
-
-  let webhookFields = "";
-
-  WEBHOOK_TYPES.forEach((type) => {
-    webhookFields += `
-      <div>
-
-        <label
-          class="block mb-2 text-sm font-semibold text-zinc-300"
-        >
-          ${type.label}
-        </label>
-
-        <input
-          id="webhook-${type.key}"
-          type="text"
-          class="input"
-          placeholder="https://discord.com/api/webhooks/..."
-          value="${webhooks[type.key] || ""}"
-        >
-
-      </div>
-    `;
-  });
-
   return `
     <div class="space-y-6">
 
-      <!-- DISCORD SETTINGS -->
-      <div class="card">
-
-        <div class="flex items-center gap-3 mb-6">
-
-          <div
-            class="
-              w-10 h-10
-              rounded-xl
-              bg-indigo-500/10
-              border border-indigo-500/20
-              flex items-center justify-center
-            "
-          >
-            <i
-              data-lucide="message-circle"
-              class="w-5 h-5 text-indigo-400"
-            ></i>
-          </div>
-
-          <div>
-
-            <h2 class="text-xl font-bold">
-              Discord Settings
-            </h2>
-
-            <p class="text-xs text-zinc-500 mt-1">
-              Konfigurasi webhook Discord BLACK LINE.
-            </p>
-
-          </div>
-
-        </div>
-
-        <div class="space-y-5">
-
-          ${webhookFields}
-
-          <div class="pt-2">
-
-            <button
-              class="btn flex items-center justify-center gap-2"
-              onclick="saveWebhookSettings()"
-            >
-              <i
-                data-lucide="save"
-                class="w-4 h-4"
-              ></i>
-
-              Simpan Settings
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
+      
 
       <!-- BACKUP & RESTORE -->
       <div class="card">
@@ -157,7 +75,7 @@ function settingsPage() {
 
                 <p class="text-sm text-zinc-500 mt-2">
                   Simpan Materials, Craftings, Transactions,
-                  dan Discord Webhooks ke satu file backup.
+                  ke satu file backup.
                 </p>
 
               </div>
@@ -350,29 +268,6 @@ function loadSettings() {
   if (typeof lucide !== "undefined") {
     lucide.createIcons();
   }
-}
-
-/* =========================================================
-   SAVE DISCORD SETTINGS
-========================================================= */
-
-function saveWebhookSettings() {
-  const data = {};
-
-  WEBHOOK_TYPES.forEach((type) => {
-    const input = document.getElementById(`webhook-${type.key}`);
-
-    data[type.key] = input ? input.value.trim() : "";
-  });
-
-  const success = saveWebhooks(data);
-
-  if (!success) {
-    alert("Discord Webhook gagal disimpan.");
-    return;
-  }
-
-  alert("Discord Webhook berhasil disimpan.");
 }
 
 /* =========================================================

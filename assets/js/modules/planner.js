@@ -19,10 +19,21 @@ function plannerPage() {
   return `
     <div class="space-y-6">
 
-      <!-- HEADER -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <!-- =====================================================
+           HEADER
+      ====================================================== -->
+      <div
+        class="
+          flex flex-col
+          md:flex-row
+          md:items-center
+          justify-between
+          gap-4
+        "
+      >
 
         <div>
+
           <h1 class="text-2xl font-black">
             Production Planner
           </h1>
@@ -30,11 +41,15 @@ function plannerPage() {
           <p class="text-sm text-zinc-500 mt-1">
             Buat dan hitung kebutuhan produksi crafting.
           </p>
+
         </div>
 
         <div class="flex items-center gap-2 text-xs text-zinc-500">
 
-          <i data-lucide="calculator" class="w-4 h-4 text-red-500"></i>
+          <i
+            data-lucide="calculator"
+            class="w-4 h-4 text-red-500"
+          ></i>
 
           Crafting Calculator
 
@@ -42,111 +57,134 @@ function plannerPage() {
 
       </div>
 
-      <!-- TOP GRID -->
-      <div class="grid xl:grid-cols-12 gap-6 items-start">
 
-        <!-- PRODUCTION -->
-        <div class="xl:col-span-8">
+      <!-- =====================================================
+           1. INFORMASI PEMESANAN
+      ====================================================== -->
+      <div class="card">
 
-          <div class="card">
+        <div class="flex items-center gap-3 mb-6">
 
-            <div class="flex items-center justify-between mb-6">
+          <div
+            class="
+              w-10 h-10
+              rounded-xl
+              bg-red-500/10
+              border border-red-500/20
+              flex items-center
+              justify-center
+            "
+          >
 
-              <div class="flex items-center gap-3">
+            <i
+              data-lucide="clipboard-pen-line"
+              class="w-5 h-5 text-red-400"
+            ></i>
 
-                <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+          </div>
 
-                  <i
-                    data-lucide="clipboard-list"
-                    class="w-5 h-5 text-red-500"
-                  ></i>
+          <div>
 
-                </div>
+            <h2 class="font-bold">
+              Informasi Pemesanan
+            </h2>
 
-                <div>
-
-                  <h2 class="font-bold">
-                    Daftar Produksi
-                  </h2>
-
-                  <p class="text-xs text-zinc-500 mt-1">
-                    Pilih crafting dan jumlah yang ingin dibuat.
-                  </p>
-
-                </div>
-
-              </div>
-
-              <div
-                id="productionCount"
-                class="text-xs text-zinc-500 bg-zinc-800 px-3 py-2 rounded-lg"
-              >
-                0 Item
-              </div>
-
-            </div>
-
-            <!-- COLUMN HEADER -->
-            <div class="hidden md:grid md:grid-cols-[1fr_140px_110px] gap-3 mb-2 px-1">
-
-              <div class="text-[10px] uppercase tracking-widest text-zinc-600">
-                Crafting
-              </div>
-
-              <div class="text-[10px] uppercase tracking-widest text-zinc-600">
-                Quantity
-              </div>
-
-              <div></div>
-
-            </div>
-
-            <div id="plannerRows"></div>
-
-            <button
-              onclick="addPlannerRow()"
-              class="btn mt-3 flex items-center justify-center gap-2"
-            >
-              <i data-lucide="plus" class="w-4 h-4"></i>
-
-              Tambah Produksi
-            </button>
+            <p class="text-xs text-zinc-500 mt-1">
+              Lengkapi data pemesan dan tanggal pemesanan.
+            </p>
 
           </div>
 
         </div>
 
-        <!-- PRODUCTION SUMMARY -->
-        <div class="xl:col-span-4">
 
-          <div class="card">
+        <div class="grid md:grid-cols-2 gap-5">
 
-            <div class="flex items-center gap-3 mb-6">
+          <!-- CUSTOMER -->
+          <div>
 
-              <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+            <label
+              for="customerName"
+              class="
+                block
+                text-xs
+                uppercase
+                tracking-widest
+                text-zinc-500
+                mb-2
+              "
+            >
+              Nama Pemesan
+            </label>
 
-                <i
-                  data-lucide="receipt-text"
-                  class="w-5 h-5 text-green-400"
-                ></i>
+            <div class="relative">
 
-              </div>
+              <i
+                data-lucide="user-round"
+                class="
+                  absolute
+                  left-4
+                  top-1/2
+                  -translate-y-1/2
+                  w-4 h-4
+                  text-zinc-500
+                  pointer-events-none
+                "
+              ></i>
 
-              <div>
-
-                <h2 class="font-bold">
-                  Ringkasan Produksi
-                </h2>
-
-                <p class="text-xs text-zinc-500 mt-1">
-                  Item yang akan diproduksi.
-                </p>
-
-              </div>
+              <input
+                id="customerName"
+                type="text"
+                class="input pl-11"
+                placeholder="Contoh: BLACK LINE"
+                autocomplete="off"
+              >
 
             </div>
 
-            <div id="plannerSummary"></div>
+          </div>
+
+
+          <!-- ORDER DATE -->
+          <div>
+
+            <label
+              for="orderDate"
+              class="
+                block
+                text-xs
+                uppercase
+                tracking-widest
+                text-zinc-500
+                mb-2
+              "
+            >
+              Tanggal Pemesanan
+            </label>
+
+            <div class="relative">
+
+              <i
+                data-lucide="calendar-days"
+                class="
+                  absolute
+                  left-4
+                  top-1/2
+                  -translate-y-1/2
+                  w-4 h-4
+                  text-zinc-500
+                  pointer-events-none
+                "
+              ></i>
+
+              <input
+                id="orderDate"
+                type="datetime-local"
+                step="1"
+                class="input pl-11"
+              >
+
+            </div>
 
           </div>
 
@@ -154,15 +192,352 @@ function plannerPage() {
 
       </div>
 
-      <!-- MATERIAL + PAYMENT -->
-      <div class="grid xl:grid-cols-2 gap-6 items-start">
+
+      <!-- =====================================================
+           2. DAFTAR PRODUKSI
+      ====================================================== -->
+      <div class="card">
+
+        <div class="flex items-center justify-between mb-6">
+
+          <div class="flex items-center gap-3">
+
+            <div
+              class="
+                w-10 h-10
+                rounded-xl
+                bg-red-500/10
+                border border-red-500/20
+                flex items-center
+                justify-center
+              "
+            >
+
+              <i
+                data-lucide="clipboard-list"
+                class="w-5 h-5 text-red-500"
+              ></i>
+
+            </div>
+
+            <div>
+
+              <h2 class="font-bold">
+                Daftar Produksi
+              </h2>
+
+              <p class="text-xs text-zinc-500 mt-1">
+                Pilih crafting dan jumlah yang ingin dibuat.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div
+            id="productionCount"
+            class="
+              text-xs
+              text-zinc-500
+              bg-zinc-800
+              px-3 py-2
+              rounded-lg
+            "
+          >
+            0 Item
+          </div>
+
+        </div>
+
+
+        <!-- COLUMN HEADER -->
+        <div
+          class="
+            hidden
+            md:grid
+            md:grid-cols-[1fr_140px_110px]
+            gap-3
+            mb-2
+            px-1
+          "
+        >
+
+          <div
+            class="
+              text-[10px]
+              uppercase
+              tracking-widest
+              text-zinc-600
+            "
+          >
+            Crafting
+          </div>
+
+          <div
+            class="
+              text-[10px]
+              uppercase
+              tracking-widest
+              text-zinc-600
+            "
+          >
+            Quantity
+          </div>
+
+          <div></div>
+
+        </div>
+
+
+        <div id="plannerRows"></div>
+
+
+        <button
+          onclick="addPlannerRow()"
+          class="
+            btn
+            mt-3
+            flex
+            items-center
+            justify-center
+            gap-2
+          "
+        >
+
+          <i
+            data-lucide="plus"
+            class="w-4 h-4"
+          ></i>
+
+          Tambah Produksi
+
+        </button>
+
+      </div>
+
+
+      <!-- =====================================================
+           3. METODE PEMBAYARAN
+      ====================================================== -->
+      <div class="card">
+
+        <div class="flex items-center gap-3 mb-6">
+
+          <div
+            class="
+              w-10 h-10
+              rounded-xl
+              bg-yellow-500/10
+              border border-yellow-500/20
+              flex items-center
+              justify-center
+            "
+          >
+
+            <i
+              data-lucide="wallet-cards"
+              class="w-5 h-5 text-yellow-400"
+            ></i>
+
+          </div>
+
+          <div>
+
+            <h2 class="font-bold">
+              Metode Pembayaran
+            </h2>
+
+            <p class="text-xs text-zinc-500 mt-1">
+              Tentukan metode pembayaran transaksi.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <div
+          id="paymentMethod"
+          class="
+            grid
+            sm:grid-cols-2
+            xl:grid-cols-4
+            gap-3
+          "
+        >
+
+          ${paymentOption(
+            "dirty",
+            "banknote",
+            "Full Dirty",
+            "100% Dirty Money",
+            "text-red-400",
+          )}
+
+          ${paymentOption(
+            "clean",
+            "badge-dollar-sign",
+            "Full Clean",
+            "100% Clean Money",
+            "text-green-400",
+          )}
+
+          ${paymentOption(
+            "hybrid50",
+            "split",
+            "Hybrid 50 / 50",
+            "50% cash + 50% material",
+            "text-yellow-400",
+          )}
+
+          ${paymentOption(
+            "hybridCustom",
+            "sliders-horizontal",
+            "Hybrid Custom",
+            "Atur persentase sendiri",
+            "text-blue-400",
+          )}
+
+        </div>
+
+
+        <!-- CUSTOM PERCENT -->
+        <div
+          id="customPercent"
+          class="
+            ${payment.method === "hybridCustom" ? "" : "hidden"}
+            mt-5
+            pt-5
+            border-t
+            border-zinc-800
+          "
+        >
+
+          <div class="flex items-center justify-between mb-3">
+
+            <label
+              for="cashPercent"
+              class="text-sm font-medium"
+            >
+              Persentase Cash
+            </label>
+
+            <strong
+              id="cashPercentValue"
+              class="text-red-400"
+            >
+              ${payment.cashPercent}%
+            </strong>
+
+          </div>
+
+
+          <input
+            id="cashPercent"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="${payment.cashPercent}"
+            class="w-full accent-red-600"
+            oninput="changeCashPercent(this.value)"
+          >
+
+
+          <div
+            class="
+              flex
+              justify-between
+              text-xs
+              text-zinc-600
+              mt-2
+            "
+          >
+
+            <span>0%</span>
+
+            <span>Cash</span>
+
+            <span>100%</span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================================
+           4. RINGKASAN PRODUKSI + TOTAL MATERIAL
+      ====================================================== -->
+      <div
+        class="
+          grid
+          xl:grid-cols-2
+          gap-6
+          items-start
+        "
+      >
+
+        <!-- PRODUCTION SUMMARY -->
+        <div class="card">
+
+          <div class="flex items-center gap-3 mb-6">
+
+            <div
+              class="
+                w-10 h-10
+                rounded-xl
+                bg-green-500/10
+                border border-green-500/20
+                flex items-center
+                justify-center
+              "
+            >
+
+              <i
+                data-lucide="receipt-text"
+                class="w-5 h-5 text-green-400"
+              ></i>
+
+            </div>
+
+            <div>
+
+              <h2 class="font-bold">
+                Ringkasan Produksi
+              </h2>
+
+              <p class="text-xs text-zinc-500 mt-1">
+                Item yang akan diproduksi.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <div id="plannerSummary"></div>
+
+        </div>
+
 
         <!-- MATERIAL -->
         <div class="card">
 
           <div class="flex items-center gap-3 mb-6">
 
-            <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+            <div
+              class="
+                w-10 h-10
+                rounded-xl
+                bg-blue-500/10
+                border border-blue-500/20
+                flex items-center
+                justify-center
+              "
+            >
 
               <i
                 data-lucide="boxes"
@@ -185,230 +560,86 @@ function plannerPage() {
 
           </div>
 
+
           <div id="plannerResult"></div>
-
-        </div>
-
-        <!-- PAYMENT -->
-        <div class="card">
-
-          <div class="flex items-center gap-3 mb-6">
-
-            <div class="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
-
-              <i
-                data-lucide="wallet-cards"
-                class="w-5 h-5 text-yellow-400"
-              ></i>
-
-            </div>
-
-            <div>
-
-              <h2 class="font-bold">
-                Metode Pembayaran
-              </h2>
-
-              <p class="text-xs text-zinc-500 mt-1">
-                Tentukan metode pembayaran transaksi.
-              </p>
-
-            </div>
-
-          </div>
-
-          <div
-            id="paymentMethod"
-            class="grid sm:grid-cols-2 gap-3"
-          >
-
-            ${paymentOption(
-              "dirty",
-              "banknote",
-              "Full Dirty",
-              "100% Dirty Money",
-              "text-red-400",
-            )}
-
-            ${paymentOption(
-              "clean",
-              "badge-dollar-sign",
-              "Full Clean",
-              "100% Clean Money",
-              "text-green-400",
-            )}
-
-            ${paymentOption(
-              "hybrid50",
-              "split",
-              "Hybrid 50 / 50",
-              "50% cash + 50% material",
-              "text-yellow-400",
-            )}
-
-            ${paymentOption(
-              "hybridCustom",
-              "sliders-horizontal",
-              "Hybrid Custom",
-              "Atur persentase sendiri",
-              "text-blue-400",
-            )}
-
-          </div>
-
-          <!-- CUSTOM PERCENT -->
-          <div
-            id="customPercent"
-            class="${payment.method === "hybridCustom" ? "" : "hidden"} mt-5 pt-5 border-t border-zinc-800"
-          >
-
-            <div class="flex items-center justify-between mb-3">
-
-              <label
-                for="cashPercent"
-                class="text-sm font-medium"
-              >
-                Persentase Cash
-              </label>
-
-              <strong
-                id="cashPercentValue"
-                class="text-red-400"
-              >
-                ${payment.cashPercent}%
-              </strong>
-
-            </div>
-
-            <input
-              id="cashPercent"
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value="${payment.cashPercent}"
-              class="w-full accent-red-600"
-              oninput="changeCashPercent(this.value)"
-            >
-
-            <div class="flex justify-between text-xs text-zinc-600 mt-2">
-
-              <span>0%</span>
-
-              <span>Cash</span>
-
-              <span>100%</span>
-
-            </div>
-
-          </div>
 
         </div>
 
       </div>
 
-      <!-- TRANSACTION -->
-      <div class="grid xl:grid-cols-12 gap-6 items-start">
 
-        <!-- CUSTOMER -->
-        <div class="xl:col-span-4">
+      <!-- =====================================================
+           5. RINGKASAN TRANSAKSI
+      ====================================================== -->
+      <div class="card">
 
-          <div class="card">
+        <div class="flex items-center gap-3 mb-6">
 
-            <div class="flex items-center gap-3 mb-6">
+          <div
+            class="
+              w-10 h-10
+              rounded-xl
+              bg-green-500/10
+              border border-green-500/20
+              flex items-center
+              justify-center
+            "
+          >
 
-              <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <i
+              data-lucide="file-text"
+              class="w-5 h-5 text-green-400"
+            ></i>
 
-                <i
-                  data-lucide="user-round"
-                  class="w-5 h-5 text-red-400"
-                ></i>
+          </div>
 
-              </div>
+          <div>
 
-              <div>
+            <h2 class="font-bold">
+              Ringkasan Transaksi
+            </h2>
 
-                <h2 class="font-bold">
-                  Pemesan
-                </h2>
-
-                <p class="text-xs text-zinc-500 mt-1">
-                  Identitas pemesan crafting.
-                </p>
-
-              </div>
-
-            </div>
-
-            <label
-              for="customerName"
-              class="block text-xs uppercase tracking-widest text-zinc-500 mb-2"
-            >
-              Nama Pemesan
-            </label>
-
-            <input
-              id="customerName"
-              type="text"
-              class="input"
-              placeholder="Contoh: BLACK LINE"
-            >
+            <p class="text-xs text-zinc-500 mt-1">
+              Periksa kembali pesanan dan pembayaran sebelum disimpan.
+            </p>
 
           </div>
 
         </div>
 
-        <!-- TRANSACTION SUMMARY -->
-        <div class="xl:col-span-8">
 
-          <div class="card">
+        <div id="transactionSummary"></div>
 
-            <div class="flex items-center justify-between gap-4 mb-6">
 
-              <div class="flex items-center gap-3">
+        <div
+          class="
+            border-t
+            border-zinc-800
+            mt-6
+            pt-6
+          "
+        >
 
-                <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
+          <button
+            onclick="saveTransaction()"
+            class="
+              btn-red
+              w-full
+              flex
+              items-center
+              justify-center
+              gap-2
+            "
+          >
 
-                  <i
-                    data-lucide="file-text"
-                    class="w-5 h-5 text-green-400"
-                  ></i>
+            <i
+              data-lucide="save"
+              class="w-4 h-4"
+            ></i>
 
-                </div>
+            Simpan Transaksi
 
-                <div>
-
-                  <h2 class="font-bold">
-                    Ringkasan Transaksi
-                  </h2>
-
-                  <p class="text-xs text-zinc-500 mt-1">
-                    Pembayaran yang harus dilakukan pemesan.
-                  </p>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div id="transactionSummary"></div>
-
-            <button
-              onclick="saveTransaction()"
-              class="btn-red mt-6 w-full flex items-center justify-center gap-2"
-            >
-
-              <i
-                data-lucide="save"
-                class="w-4 h-4"
-              ></i>
-
-              Simpan Transaksi
-
-            </button>
-
-          </div>
+          </button>
 
         </div>
 
@@ -538,6 +769,22 @@ async function loadPlanner() {
   await fetchCraftingsFromSupabase();
 
   document.getElementById("app").innerHTML = plannerPage();
+
+  const orderDateInput = document.getElementById("orderDate");
+
+  if (orderDateInput) {
+    const now = new Date();
+
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const seconds = String(now.getSeconds()).padStart(2, "0");
+
+    orderDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
 
   renderPlannerRows();
   refreshPlanner();
@@ -1366,19 +1613,65 @@ function renderHybridCustomTransaction(transaction) {
   return `
     <div class="space-y-5">
 
-      <div class="grid sm:grid-cols-2 gap-3">
+      <!-- HYBRID CUSTOM INFO -->
+      <div
+        class="
+          border border-blue-500/20
+          bg-blue-500/5
+          rounded-2xl
+          p-5
+        "
+      >
 
-        ${smallTransactionStat("Cash", `${transaction.cashPercent}%`)}
+        <div class="flex items-center gap-3 mb-4">
 
-        ${smallTransactionStat("Material", `${transaction.materialPercent}%`)}
+          <div
+            class="
+              w-9 h-9
+              rounded-xl
+              bg-blue-500/10
+              flex items-center
+              justify-center
+            "
+          >
+            <i
+              data-lucide="sliders-horizontal"
+              class="w-4 h-4 text-blue-400"
+            ></i>
+          </div>
+
+          <div>
+            <div class="font-bold">
+              Hybrid Custom
+            </div>
+
+            <div class="text-xs text-zinc-500 mt-1">
+              Pembagian pembayaran transaksi
+            </div>
+          </div>
+
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-3">
+
+          ${smallTransactionStat(
+            "Cash / Dirty Money",
+            `${transaction.cashPercent}%`,
+          )}
+
+          ${smallTransactionStat("Material", `${transaction.materialPercent}%`)}
+
+        </div>
 
       </div>
+
 
       ${transactionTotalRow(
         "Dirty Money",
         transaction.dirtyMoney,
         "text-red-400",
       )}
+
 
       ${renderTransactionMaterials(transaction.materials)}
 
@@ -1526,13 +1819,22 @@ function renderTransactionMaterials(materials) {
 
 async function saveTransaction() {
   const customerInput = document.getElementById("customerName");
-  const customer = customerInput?.value.trim() || "";
+  const orderDateInput = document.getElementById("orderDate");
 
-  if (customer === "") {
-    alert("Nama pemesan wajib diisi.");
-    customerInput?.focus();
+  const customer = customerInput ? customerInput.value.trim() : "";
+  const orderDate = orderDateInput ? orderDateInput.value : "";
+
+  if (!customer) {
+    alert("Masukkan nama pemesan.");
     return;
   }
+
+  if (!orderDate) {
+    alert("Pilih tanggal pemesanan.");
+    return;
+  }
+
+  const orderDateISO = new Date(orderDate).toISOString();
 
   const craftings = supabaseCraftings;
 
@@ -1574,6 +1876,7 @@ async function saveTransaction() {
     .from("transactions")
     .insert({
       customer: customer,
+      order_date: orderDateISO,
       payment_method: transaction.method,
       total_sell_price: Math.round(transaction.totalSellPrice),
       dirty_money: Math.round(transaction.dirtyMoney),

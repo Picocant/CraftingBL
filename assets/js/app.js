@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   await initializeAuth();
 
   applyRoleAccess();
+  updateAuthButtons();
   // Ambil status sidebar terakhir
   const sidebarCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
 
@@ -26,6 +27,21 @@ function applyRoleAccess() {
       menu.classList.add("hidden");
     }
   });
+}
+
+function updateAuthButtons() {
+  const loginButton = document.getElementById("loginButton");
+  const logoutButton = document.getElementById("logoutButton");
+
+  if (isAdmin()) {
+    loginButton?.classList.add("hidden");
+    logoutButton?.classList.remove("hidden");
+  } else {
+    loginButton?.classList.remove("hidden");
+    logoutButton?.classList.add("hidden");
+  }
+
+  lucide.createIcons();
 }
 
 function setActiveMenu(menuId) {

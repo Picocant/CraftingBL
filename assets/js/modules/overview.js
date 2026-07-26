@@ -1,5 +1,3 @@
-
-
 let supabaseOverviewTransactions = [];
 
 let overviewMaterialCount = 0;
@@ -34,33 +32,33 @@ async function fetchOverviewTransactionsFromSupabase() {
     )
     .order("created_at", { ascending: false });
 
-    const { count: materialCount, error: materialCountError } =
-      await supabaseClient.from("materials").select("*", {
-        count: "exact",
-        head: true,
-      });
+  const { count: materialCount, error: materialCountError } =
+    await supabaseClient.from("materials").select("*", {
+      count: "exact",
+      head: true,
+    });
 
-    if (materialCountError) {
-      console.error("Gagal mengambil jumlah material:", materialCountError);
+  if (materialCountError) {
+    console.error("Gagal mengambil jumlah material:", materialCountError);
 
-      overviewMaterialCount = 0;
-    } else {
-      overviewMaterialCount = materialCount || 0;
-    }
+    overviewMaterialCount = 0;
+  } else {
+    overviewMaterialCount = materialCount || 0;
+  }
 
-    const { count: craftingCount, error: craftingCountError } =
-      await supabaseClient.from("craftings").select("*", {
-        count: "exact",
-        head: true,
-      });
+  const { count: craftingCount, error: craftingCountError } =
+    await supabaseClient.from("craftings").select("*", {
+      count: "exact",
+      head: true,
+    });
 
-    if (craftingCountError) {
-      console.error("Gagal mengambil jumlah crafting:", craftingCountError);
+  if (craftingCountError) {
+    console.error("Gagal mengambil jumlah crafting:", craftingCountError);
 
-      overviewCraftingCount = 0;
-    } else {
-      overviewCraftingCount = craftingCount || 0;
-    }
+    overviewCraftingCount = 0;
+  } else {
+    overviewCraftingCount = craftingCount || 0;
+  }
 
   if (error) {
     console.error("Gagal mengambil data overview:", error);
@@ -144,7 +142,7 @@ function overviewHero(processing, completed, totalTransactions, progress) {
               ${processing} transaksi
             </span>
 
-            yang masih diproses dan
+            yang masih Menunggu dan
 
             <span class="text-green-400 font-semibold">
               ${completed} transaksi
@@ -262,6 +260,10 @@ function overviewPage() {
 
   const totalTransactions = transactions.length;
 
+  const totalRevenue = transactions.reduce((total, item) => {
+    return total + (Number(item.transaction?.totalSellPrice) || 0);
+  }, 0);
+
   /* =====================================================
      BULAN INI
   ===================================================== */
@@ -275,12 +277,25 @@ function overviewPage() {
     );
   }).length;
 
+  const monthlyRevenue = transactions
+    .filter((transaction) => {
+      const date = new Date(transaction.createdAt);
+      const now = new Date();
+
+      return (
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
+      );
+    })
+    .reduce((total, transaction) => {
+      return total + (Number(transaction.transaction?.totalSellPrice) || 0);
+    }, 0);
   /* =====================================================
      STATUS
   ===================================================== */
 
   const processing = transactions.filter(
-    (transaction) => transaction.status === "Proses",
+    (transaction) => transaction.status === "Menunggu",
   ).length;
 
   const completed = transactions.filter(
@@ -451,17 +466,122 @@ function overviewPage() {
                 )}
 
                 ${statCard(
-                  "calendar-days",
-                  "Bulan Ini",
-                  monthlyTransactions,
-                  "text-blue-500",
+                  "banknote",
+                  "Total Omzet",
+                  `Rp ${totalRevenue.toLocaleString("id-ID")}`,
+                  "text-green-500",
                 )}
 
-                ${statCard("clock-3", "Diproses", processing, "text-yellow-500")}
+                ${statCard("clock-3", "Menunggu", processing, "text-yellow-500")}
 
                 ${statCard("badge-check", "Selesai", completed, "text-green-500")}
 
             </div>
+
+            <!-- MONTHLY PERFORMANCE -->
+<div
+  class="
+    rounded-2xl
+    border border-zinc-800
+    bg-zinc-900
+    p-5
+  "
+>
+  <div
+    class="
+      flex flex-col
+      lg:flex-row
+      lg:items-center
+      justify-between
+      gap-5
+    "
+  >
+
+    <div class="flex items-center gap-3">
+
+      <div
+        class="
+          w-10 h-10
+          rounded-xl
+          bg-blue-500/10
+          border border-blue-500/20
+          flex items-center
+          justify-center
+        "
+      >
+        <i
+          data-lucide="calendar-range"
+          class="w-5 h-5 text-blue-400"
+        ></i>
+      </div>
+
+      <div>
+        <div class="font-bold">
+          Performa Bulan Ini
+        </div>
+
+        <div class="text-xs text-zinc-500 mt-1">
+          Ringkasan transaksi bulan berjalan.
+        </div>
+      </div>
+
+    </div>
+
+
+    <div
+      class="
+        grid grid-cols-2
+        gap-8
+        lg:min-w-[420px]
+      "
+    >
+
+      <div>
+        <div
+          class="
+            text-[10px]
+            uppercase
+            tracking-widest
+            text-zinc-500
+          "
+        >
+          Transaksi Bulan Ini
+        </div>
+
+        <div class="text-xl font-black mt-2">
+          ${monthlyTransactions}
+        </div>
+      </div>
+
+
+      <div>
+        <div
+          class="
+            text-[10px]
+            uppercase
+            tracking-widest
+            text-zinc-500
+          "
+        >
+          Omzet Bulan Ini
+        </div>
+
+        <div
+          class="
+            text-xl
+            font-black
+            text-green-400
+            mt-2
+          "
+        >
+          Rp ${monthlyRevenue.toLocaleString("id-ID")}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
             
 
             
@@ -839,7 +959,7 @@ function progressCard(progress, completed, processing, totalTransactions) {
           </div>
 
           <div class="text-yellow-400 text-sm mt-1">
-            ${processing} diproses
+            ${processing} menunggu
           </div>
 
         </div>

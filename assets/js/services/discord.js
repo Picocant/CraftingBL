@@ -1,32 +1,31 @@
 async function sendDiscordWebhook(type, payload) {
-  const webhooks = getWebhooks();
-
-  const webhook = webhooks[type];
-
-  if (!webhook) {
-    alert(`Webhook "${type}" belum diatur.`);
-    return false;
-  }
-
   try {
-    const response = await fetch(webhook, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const { data, error } = await supabaseClient.functions.invoke(
+      "send-discord",
+      {
+        body: {
+          type: type,
+          payload: payload,
+        },
       },
-      body: JSON.stringify(payload),
-    });
+    );
 
-    if (!response.ok) {
-      throw new Error("Webhook gagal dikirim.");
+    if (error) {
+      console.error("Edge Function error:", error);
+      alert("Gagal mengirim transaksi ke Discord.");
+      return false;
+    }
+
+    if (!data?.success) {
+      console.error("Discord response error:", data);
+      alert(data?.error || "Gagal mengirim transaksi ke Discord.");
+      return false;
     }
 
     return true;
   } catch (error) {
-    console.error(error);
-
-    alert(error.message);
-
+    console.error("Discord send error:", error);
+    alert("Terjadi kesalahan saat mengirim ke Discord.");
     return false;
   }
 }
