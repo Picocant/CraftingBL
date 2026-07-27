@@ -1177,21 +1177,36 @@ function calculatePlanner() {
 ========================================================= */
 
 function changePaymentMethod(method) {
-  payment.method = method;
-
+  // Simpan nilai form sebelum halaman dirender ulang
   const oldCustomer = document.getElementById("customerName")?.value || "";
 
+  const oldOrderDate = document.getElementById("orderDate")?.value || "";
+
+  // Update metode pembayaran
+  payment.method = method;
+
+  // Render ulang Planner
   document.getElementById("app").innerHTML = plannerPage();
 
+  // Render data produksi dan kalkulasi
   renderPlannerRows();
   refreshPlanner();
 
+  // Kembalikan nama pemesan
   const customerInput = document.getElementById("customerName");
 
   if (customerInput) {
     customerInput.value = oldCustomer;
   }
 
+  // Kembalikan tanggal pemesanan
+  const orderDateInput = document.getElementById("orderDate");
+
+  if (orderDateInput) {
+    orderDateInput.value = oldOrderDate;
+  }
+
+  // Render ulang icon
   if (typeof lucide !== "undefined") {
     lucide.createIcons();
   }

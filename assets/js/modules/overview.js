@@ -104,8 +104,6 @@ async function fetchOverviewTransactionsFromSupabase() {
   );
 }
 
-let overviewChartInstance = null;
-
 /* =========================================================
    HERO
 ========================================================= */
@@ -312,39 +310,80 @@ function overviewPage() {
     .slice(0, 5);
 
   /* =====================================================
-     TOP CUSTOMER
-  ===================================================== */
+   TOP CUSTOMER
+===================================================== */
 
   const customerStats = {};
 
   transactions.forEach((transaction) => {
     const name = transaction.customer || "Tanpa Nama";
 
-    customerStats[name] = (customerStats[name] || 0) + 1;
+    if (!customerStats[name]) {
+      customerStats[name] = {
+        transactions: 0,
+        revenue: 0,
+      };
+    }
+
+    customerStats[name].transactions += 1;
+
+    customerStats[name].revenue +=
+      Number(transaction.transaction?.totalSellPrice) || 0;
   });
 
   const topCustomers = Object.entries(customerStats)
-    .sort((a, b) => b[1] - a[1])
+    .map(([name, stats]) => ({
+      name,
+      transactions: stats.transactions,
+      revenue: stats.revenue,
+    }))
+    .sort((a, b) => {
+      if (b.transactions !== a.transactions) {
+        return b.transactions - a.transactions;
+      }
+
+      return b.revenue - a.revenue;
+    })
     .slice(0, 5);
 
   /* =====================================================
-     TOP CRAFTING
-  ===================================================== */
+   TOP CRAFTING
+===================================================== */
 
   const craftingStats = {};
 
   transactions.forEach((transaction) => {
     (transaction.items || []).forEach((item) => {
+      const name = item.name || "Unknown Crafting";
       const qty = Number(item.qty) || 0;
+      const subtotal = Number(item.subtotal) || 0;
 
-      craftingStats[item.name] = (craftingStats[item.name] || 0) + qty;
+      if (!craftingStats[name]) {
+        craftingStats[name] = {
+          qty: 0,
+          revenue: 0,
+        };
+      }
+
+      craftingStats[name].qty += qty;
+      craftingStats[name].revenue += subtotal;
     });
   });
 
   const topCraftings = Object.entries(craftingStats)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+    .map(([name, stats]) => ({
+      name,
+      qty: stats.qty,
+      revenue: stats.revenue,
+    }))
+    .sort((a, b) => {
+      if (b.qty !== a.qty) {
+        return b.qty - a.qty;
+      }
 
+      return b.revenue - a.revenue;
+    })
+    .slice(0, 5);
   /* =====================================================
      PROGRESS
   ===================================================== */
@@ -591,32 +630,6 @@ function overviewPage() {
         <!-- LEFT -->
         <div class="xl:col-span-8 space-y-6">
 
-          <!-- CHART -->
-          <div class="card">
-
-            <h2 class="text-xl font-bold flex items-center gap-3 mb-6">
-
-              <i
-                data-lucide="chart-column"
-                class="w-5 h-5 text-red-500"
-              ></i>
-
-              Statistik Transaksi
-
-            </h2>
-
-            ${
-              totalTransactions === 0
-                ? emptyChartState()
-                : `
-                  <div class="relative h-[220px]">
-                    <canvas id="overviewChart"></canvas>
-                  </div>
-                `
-            }
-
-          </div>
-
           <!-- AKTIVITAS TERBARU -->
           <div class="card">
 
@@ -799,45 +812,106 @@ function topCustomerCard(topCustomers) {
 
               ${topCustomers
                 .map(
-                  ([name, total], index) => `
-                    <div class="flex items-center justify-between border-b border-zinc-800 last:border-none pb-3 last:pb-0">
+                  (customer, index) => `
+                    <div
+                      class="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        border-b
+                        border-zinc-800
+                        last:border-none
+                        pb-3
+                        last:pb-0
+                      "
+                    >
 
+                      <!-- LEFT -->
                       <div class="flex items-center gap-3 min-w-0">
 
-                        <div class="
-                          w-9 h-9
-                          rounded-xl
-                          flex
-                          items-center
-                          justify-center
-                          font-bold
-                          shrink-0
-                          ${
-                            index === 0
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-red-500/10 text-red-400"
-                          }
-                        ">
+                        <!-- RANK -->
+                        <div
+                          class="
+                            w-9 h-9
+                            rounded-xl
+                            flex
+                            items-center
+                            justify-center
+                            font-bold
+                            shrink-0
+                            ${
+                              index === 0
+                                ? "bg-yellow-500/10 text-yellow-400"
+                                : index === 1
+                                  ? "bg-zinc-500/10 text-zinc-300"
+                                  : index === 2
+                                    ? "bg-orange-500/10 text-orange-400"
+                                    : "bg-red-500/10 text-red-400"
+                            }
+                          "
+                        >
                           ${index + 1}
                         </div>
 
+                        <!-- CUSTOMER INFO -->
                         <div class="min-w-0">
 
                           <div class="font-semibold truncate">
-                            ${name}
+                            ${customer.name}
                           </div>
 
-                          <div class="text-xs text-zinc-500">
-                            Customer
+                          <div
+                            class="
+                              flex
+                              flex-wrap
+                              items-center
+                              gap-x-3
+                              gap-y-1
+                              mt-1
+                            "
+                          >
+
+                            <span class="text-xs text-zinc-500">
+                              ${customer.transactions} Transaksi
+                            </span>
+
+                            <span class="text-xs text-green-400 font-semibold">
+                              Rp ${customer.revenue.toLocaleString("id-ID")}
+                            </span>
+
                           </div>
 
                         </div>
 
                       </div>
 
-                      <strong class="ml-4">
-                        ${total}x
-                      </strong>
+                      <!-- TOTAL TRANSACTIONS -->
+                      <div class="text-right shrink-0">
+
+                        <div
+                          class="
+                            text-lg
+                            font-black
+                            text-zinc-200
+                          "
+                        >
+                          ${customer.transactions}x
+                        </div>
+
+                        <div
+                          class="
+                            text-[10px]
+                            uppercase
+                            tracking-widest
+                            text-zinc-600
+                            mt-1
+                          "
+                        >
+                          Order
+                        </div>
+
+                      </div>
 
                     </div>
                   `,
@@ -879,30 +953,108 @@ function topCraftingCard(topCraftings) {
             </div>
           `
           : `
-            <div class="space-y-4">
+            <div class="space-y-3">
 
               ${topCraftings
                 .map(
-                  ([name, total], index) => `
-                    <div>
+                  (crafting, index) => `
+                    <div
+                      class="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        border-b
+                        border-zinc-800
+                        last:border-none
+                        pb-3
+                        last:pb-0
+                      "
+                    >
 
-                      <div class="flex items-center justify-between gap-4">
+                      <!-- LEFT -->
+                      <div class="flex items-center gap-3 min-w-0">
 
-                        <div class="flex items-center gap-3 min-w-0">
+                        <!-- RANK -->
+                        <div
+                          class="
+                            w-9 h-9
+                            rounded-xl
+                            flex
+                            items-center
+                            justify-center
+                            font-bold
+                            shrink-0
+                            ${
+                              index === 0
+                                ? "bg-yellow-500/10 text-yellow-400"
+                                : index === 1
+                                  ? "bg-zinc-500/10 text-zinc-300"
+                                  : index === 2
+                                    ? "bg-orange-500/10 text-orange-400"
+                                    : "bg-red-500/10 text-red-400"
+                            }
+                          "
+                        >
+                          ${index + 1}
+                        </div>
 
-                          <span class="text-zinc-500 text-sm">
-                            #${index + 1}
-                          </span>
+                        <!-- CRAFTING INFO -->
+                        <div class="min-w-0">
 
-                          <span class="font-medium truncate">
-                            ${name}
-                          </span>
+                          <div class="font-semibold truncate">
+                            ${crafting.name}
+                          </div>
+
+                          <div
+                            class="
+                              flex
+                              flex-wrap
+                              items-center
+                              gap-x-3
+                              gap-y-1
+                              mt-1
+                            "
+                          >
+
+                            <span class="text-xs text-zinc-500">
+                              ${crafting.qty} Terjual
+                            </span>
+
+                            <span class="text-xs text-green-400 font-semibold">
+                              Rp ${crafting.revenue.toLocaleString("id-ID")}
+                            </span>
+
+                          </div>
 
                         </div>
 
-                        <strong class="text-red-400 shrink-0">
-                          ${total}
-                        </strong>
+                      </div>
+
+                      <!-- TOTAL QTY -->
+                      <div class="text-right shrink-0">
+
+                        <div
+                          class="
+                            text-lg
+                            font-black
+                            text-red-400
+                          "
+                        >
+                          ${crafting.qty}x
+                        </div>
+
+                        <div
+                          class="
+                            text-[10px]
+                            uppercase
+                            tracking-widest
+                            text-zinc-600
+                            mt-1
+                          "
+                        >
+                          Item
+                        </div>
 
                       </div>
 
@@ -1292,142 +1444,6 @@ function emptyTransactionState() {
   `;
 }
 
-function emptyChartState() {
-  return `
-    <div class="h-[190px] flex flex-col items-center justify-center text-center">
-
-      <div class="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-
-        <i
-          data-lucide="chart-column"
-          class="w-6 h-6 text-zinc-500"
-        ></i>
-
-      </div>
-
-      <div class="font-semibold mt-4">
-        Belum ada transaksi
-      </div>
-
-      <div class="text-xs text-zinc-500 mt-2">
-        Statistik transaksi akan muncul setelah transaksi pertama dibuat.
-      </div>
-
-    </div>
-  `;
-}
-
-/* =========================================================
-   CHART
-========================================================= */
-
-function renderOverviewChart() {
-  const transactions = supabaseOverviewTransactions;
-
-  const canvas = document.getElementById("overviewChart");
-
-  if (!canvas || transactions.length === 0) {
-    return;
-  }
-
-  const dailyStats = {};
-
-  transactions.forEach((item) => {
-    const date = new Date(item.createdAt);
-
-    if (Number.isNaN(date.getTime())) {
-      return;
-    }
-
-    const key = date.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "short",
-    });
-
-    dailyStats[key] = (dailyStats[key] || 0) + 1;
-  });
-
-  if (overviewChartInstance) {
-    overviewChartInstance.destroy();
-    overviewChartInstance = null;
-  }
-
-  overviewChartInstance = new Chart(canvas, {
-    type: "line",
-
-    data: {
-      labels: Object.keys(dailyStats),
-
-      datasets: [
-        {
-          label: "Transaksi",
-
-          data: Object.values(dailyStats),
-
-          borderColor: "#dc2626",
-
-          backgroundColor: "rgba(220, 38, 38, 0.12)",
-
-          borderWidth: 2,
-
-          pointRadius: 4,
-
-          pointHoverRadius: 6,
-
-          tension: 0.35,
-
-          fill: true,
-        },
-      ],
-    },
-
-    options: {
-      responsive: true,
-
-      maintainAspectRatio: false,
-
-      interaction: {
-        intersect: false,
-        mode: "index",
-      },
-
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-
-      scales: {
-        x: {
-          ticks: {
-            color: "#a1a1aa",
-          },
-
-          grid: {
-            color: "#27272a",
-          },
-        },
-
-        y: {
-          beginAtZero: true,
-
-          ticks: {
-            color: "#a1a1aa",
-
-            precision: 0,
-
-            stepSize: 1,
-          },
-
-          grid: {
-            color: "#27272a",
-          },
-        },
-      },
-    },
-  });
-}
-
 /* =========================================================
    LOAD OVERVIEW
 ========================================================= */
@@ -1453,6 +1469,4 @@ async function loadOverview() {
   document.getElementById("app").innerHTML = overviewPage();
 
   lucide.createIcons();
-
-  renderOverviewChart();
 }
