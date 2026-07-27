@@ -3,6 +3,10 @@ let supabaseOverviewTransactions = [];
 let overviewMaterialCount = 0;
 let overviewCraftingCount = 0;
 
+let overviewMembers = [];
+let overviewActivities = [];
+let overviewContributions = [];
+
 async function fetchOverviewTransactionsFromSupabase() {
   const { data, error } = await supabaseClient
     .from("transactions")
@@ -102,6 +106,91 @@ async function fetchOverviewTransactionsFromSupabase() {
     "Overview transactions loaded from Supabase:",
     supabaseOverviewTransactions,
   );
+}
+
+/* =========================================================
+   FETCH GROUP OVERVIEW
+========================================================= */
+
+async function fetchOverviewGroupData() {
+  /* =========================
+     MEMBERS
+  ========================= */
+
+  const { data: members, error: membersError } = await supabaseClient
+    .from("members")
+    .select("id, name")
+    .order("name", { ascending: true });
+
+  if (membersError) {
+    console.error("Gagal mengambil anggota overview:", membersError);
+
+    overviewMembers = [];
+  } else {
+    overviewMembers = members || [];
+  }
+
+  /* =========================
+     ACTIVITIES
+  ========================= */
+
+  const { data: activities, error: activitiesError } = await supabaseClient
+    .from("activities")
+    .select(
+      `
+        id,
+        name,
+        activity_date,
+        leader_id,
+        activity_attendances (
+          member_id
+        )
+      `,
+    )
+    .order("activity_date", { ascending: false });
+
+  if (activitiesError) {
+    console.error("Gagal mengambil aktivitas overview:", activitiesError);
+
+    overviewActivities = [];
+  } else {
+    overviewActivities = activities || [];
+  }
+
+  /* =========================
+     CONTRIBUTIONS
+  ========================= */
+
+  const { data: contributions, error: contributionsError } =
+    await supabaseClient
+      .from("contributions")
+      .select(
+        `
+        id,
+        member_id,
+        contribution_date,
+        type,
+        item_name,
+        quantity,
+        unit_price,
+        total_value
+      `,
+      )
+      .order("contribution_date", { ascending: false });
+
+  if (contributionsError) {
+    console.error("Gagal mengambil kontribusi overview:", contributionsError);
+
+    overviewContributions = [];
+  } else {
+    overviewContributions = contributions || [];
+  }
+
+  console.log("Overview group data:", {
+    members: overviewMembers,
+    activities: overviewActivities,
+    contributions: overviewContributions,
+  });
 }
 
 /* =========================================================
@@ -255,6 +344,32 @@ function overviewPage() {
   const transactions = supabaseOverviewTransactions;
 
   const now = new Date();
+
+  /* =====================================================
+   GROUP SUMMARY
+===================================================== */
+
+  const totalMembers = overviewMembers.length;
+
+  const totalActivities = overviewActivities.length;
+
+  const totalContributions = overviewContributions.length;
+
+  const totalAttendances = overviewActivities.reduce((total, activity) => {
+    return total + (activity.activity_attendances?.length || 0);
+  }, 0);
+
+  const totalContributionValue = overviewContributions.reduce(
+    (total, contribution) => {
+      const quantity = Number(contribution.quantity) || 0;
+      const unitPrice = Number(contribution.unit_price) || 0;
+
+      const value = Number(contribution.total_value) || quantity * unitPrice;
+
+      return total + value;
+    },
+    0,
+  );
 
   const totalTransactions = transactions.length;
 
@@ -623,7 +738,88 @@ function overviewPage() {
 </div>
             
 
-            
+        <!-- GROUP SUMMARY -->
+        <div class="space-y-4">
+
+          <div class="flex items-center justify-between gap-4">
+
+            <div class="flex items-center gap-3">
+
+              <div
+                class="
+                  w-10 h-10
+                  rounded-xl
+                  bg-red-500/10
+                  border border-red-500/20
+                  flex items-center
+                  justify-center
+                "
+              >
+                <i
+                  data-lucide="users-round"
+                  class="w-5 h-5 text-red-400"
+                ></i>
+              </div>
+
+              <div>
+                <h2 class="text-lg font-bold">
+                  Ringkasan Kelompok
+                </h2>
+
+                <p class="text-xs text-zinc-500 mt-1">
+                  Statistik anggota, aktivitas, dan kontribusi BLACK LINE.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="
+              grid
+              grid-cols-1
+              sm:grid-cols-2
+              xl:grid-cols-5
+              gap-4
+            "
+          >
+
+            ${statCard("users", "Total Anggota", totalMembers, "text-blue-400")}
+
+            ${statCard(
+              "calendar-check-2",
+              "Total Aktivitas",
+              totalActivities,
+              "text-yellow-400",
+            )}
+
+            ${statCard(
+              "user-check",
+              "Total Kehadiran",
+              totalAttendances,
+              "text-purple-400",
+            )}
+
+            ${statCard(
+              "package-plus",
+              "Total Setoran",
+              totalContributions,
+              "text-orange-400",
+            )}
+
+            ${statCard(
+              "banknote",
+              "Nilai Setoran",
+              `Rp ${totalContributionValue.toLocaleString("id-ID")}`,
+              "text-green-400",
+            )}
+
+          </div>
+
+        </div>            
+
       <!-- MAIN GRID -->
       <div class="grid xl:grid-cols-12 gap-6 items-start">
 
@@ -1464,6 +1660,9 @@ async function loadOverview() {
 
   // Ambil transaksi terbaru dari Supabase
   await fetchOverviewTransactionsFromSupabase();
+
+  // Ambil data kelompok
+  await fetchOverviewGroupData();
 
   // Render dashboard setelah data selesai
   document.getElementById("app").innerHTML = overviewPage();

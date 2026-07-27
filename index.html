@@ -76,6 +76,42 @@
           </button>
 
           <button
+            id="menu-members"
+            class="menu-item"
+            data-access="admin"
+            onclick="loadMembers()"
+            title="Members"
+          >
+            <i data-lucide="users"></i>
+
+            <span class="menu-text"> Members </span>
+          </button>
+
+          <button
+            id="menu-activities"
+            class="menu-item"
+            data-access="admin"
+            onclick="loadActivities()"
+            title="Aktivitas Kelompok"
+          >
+            <i data-lucide="calendar-check-2"></i>
+
+            <span class="menu-text"> Aktivitas </span>
+          </button>
+
+          <button
+            id="menu-contributions"
+            class="menu-item"
+            data-access="admin"
+            onclick="loadContributions()"
+            title="Kontribusi Kerja"
+          >
+            <i data-lucide="package-plus"></i>
+
+            <span class="menu-text"> Kontribusi </span>
+          </button>
+
+          <button
             id="menu-material"
             class="menu-item"
             data-access="admin"
@@ -195,12 +231,15 @@
     <script src="assets/js/services/discordEmbeds.js"></script>
 
     <!-- MODULES -->
+    <script src="assets/js/modules/member.js"></script>
     <script src="assets/js/modules/material.js"></script>
     <script src="assets/js/modules/crafting.js"></script>
     <script src="assets/js/modules/planner.js"></script>
     <script src="assets/js/modules/transaction.js"></script>
     <script src="assets/js/modules/settings.js"></script>
     <script src="assets/js/modules/overview.js"></script>
+    <script src="assets/js/modules/activity.js"></script>
+    <script src="assets/js/modules/contribution.js"></script>
 
     <!-- APP -->
     <script src="assets/js/app.js"></script>
