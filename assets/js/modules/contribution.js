@@ -1,5 +1,7 @@
 let supabaseContributions = [];
 let contributionMembers = [];
+let contributionMaterials = [];
+let contributionCraftings = [];
 let editingContributionId = null;
 
 /* =========================================================
@@ -23,6 +25,60 @@ async function fetchContributionMembers() {
   contributionMembers = data || [];
 
   console.log("Contribution members loaded:", contributionMembers);
+}
+
+/* =========================================================
+   FETCH CONTRIBUTION ITEMS
+========================================================= */
+
+async function fetchContributionItems() {
+  /* =========================
+     MATERIALS
+  ========================= */
+
+  const { data: materials, error: materialsError } = await supabaseClient
+    .from("materials")
+    .select("id, name, price, currency")
+    .order("name", { ascending: true });
+
+  if (materialsError) {
+    console.error("Gagal mengambil material untuk kontribusi:", materialsError);
+
+    contributionMaterials = [];
+  } else {
+    contributionMaterials = (materials || []).map((material) => ({
+      id: Number(material.id),
+      name: material.name,
+      price: Number(material.price) || 0,
+      currency: material.currency || "",
+    }));
+  }
+
+  /* =========================
+     CRAFTINGS
+  ========================= */
+
+  const { data: craftings, error: craftingsError } = await supabaseClient
+    .from("craftings")
+    .select("id, name, category")
+    .order("name", { ascending: true });
+
+  if (craftingsError) {
+    console.error("Gagal mengambil crafting untuk kontribusi:", craftingsError);
+
+    contributionCraftings = [];
+  } else {
+    contributionCraftings = (craftings || []).map((crafting) => ({
+      id: Number(crafting.id),
+      name: crafting.name,
+      category: crafting.category || "",
+    }));
+  }
+
+  console.log("Contribution items loaded:", {
+    materials: contributionMaterials,
+    craftings: contributionCraftings,
+  });
 }
 /* =========================================================
    FETCH CONTRIBUTIONS
@@ -218,44 +274,61 @@ function contributionPage() {
               Jenis Kontribusi
             </label>
 
-            <select
-              id="contributionType"
-              class="input"
-            >
-              <option value="Material">
-                Material
-              </option>
+              <select
+                id="contributionType"
+                class="input"
+                onchange="changeContributionType()"
+              >
+                <option value="Material">
+                  Material
+                </option>
 
-              <option value="Barang">
-                Barang
-              </option>
-            </select>
+                <option value="Crafting">
+                  Crafting
+                </option>
+              </select>
           </div>
 
 
-          <div>
-            <label
-              for="contributionItem"
-              class="
-                block
-                text-xs
-                uppercase
-                tracking-widest
-                text-zinc-500
-                mb-2
-              "
-            >
-              Nama Barang / Material
-            </label>
+            <div>
 
-            <input
-              id="contributionItem"
-              type="text"
-              class="input"
-              placeholder="Contoh: Iron"
-              autocomplete="off"
-            >
-          </div>
+                <label
+                  for="contributionItem"
+                  id="contributionItemLabel"
+                  class="
+                    block
+                    text-xs
+                    uppercase
+                    tracking-widest
+                    text-zinc-500
+                    mb-2
+                  "
+                >
+                  Material
+                </label>
+
+                <select
+                  id="contributionItem"
+                  class="input"
+                  onchange="changeContributionItem()"
+                >
+                  <option value="">
+                    Pilih Material
+                  </option>
+
+                  ${contributionMaterials
+                    .map(
+                      (material) => `
+                        <option value="${material.id}">
+                          ${escapeContributionHTML(material.name)}
+                        </option>
+                      `,
+                    )
+                    .join("")}
+
+                </select>
+
+            </div>
 
         </div>
 
@@ -305,15 +378,22 @@ function contributionPage() {
               Harga Satuan
             </label>
 
-            <input
-              id="contributionPrice"
-              type="number"
-              min="0"
-              step="1"
-              class="input"
-              placeholder="0"
-              oninput="calculateContributionTotal()"
-            >
+              <input
+                id="contributionPrice"
+                type="number"
+                min="0"
+                step="1"
+                class="input"
+                placeholder="Pilih material terlebih dahulu"
+                oninput="calculateContributionTotal()"
+                readonly
+              >
+                  <p
+                    id="contributionPriceInfo"
+                    class="text-xs text-zinc-600 mt-2"
+                  >
+                    Harga otomatis mengikuti data Materials.
+                  </p>
           </div>
 
         </div>
@@ -517,6 +597,153 @@ function contributionPage() {
 }
 
 /* =========================================================
+   CONTRIBUTION TYPE
+========================================================= */
+
+function changeContributionType() {
+  const type = document.getElementById("contributionType")?.value || "Material";
+
+  const itemInput = document.getElementById("contributionItem");
+  const itemLabel = document.getElementById("contributionItemLabel");
+  const priceInput = document.getElementById("contributionPrice");
+  const priceInfo = document.getElementById("contributionPriceInfo");
+
+  if (!itemInput || !priceInput) {
+    return;
+  }
+
+  /* =========================
+     MATERIAL
+  ========================= */
+
+  if (type === "Material") {
+    if (itemLabel) {
+      itemLabel.textContent = "Material";
+    }
+
+    itemInput.innerHTML = `
+      <option value="">
+        Pilih Material
+      </option>
+
+      ${contributionMaterials
+        .map(
+          (material) => `
+            <option value="${material.id}">
+              ${escapeContributionHTML(material.name)}
+            </option>
+          `,
+        )
+        .join("")}
+    `;
+
+    priceInput.value = "";
+    priceInput.readOnly = true;
+    priceInput.placeholder = "Pilih material terlebih dahulu";
+
+    if (priceInfo) {
+      priceInfo.textContent = "Harga otomatis mengikuti data Materials.";
+    }
+  }
+
+  /* =========================
+     CRAFTING
+  ========================= */
+
+  if (type === "Crafting") {
+    if (itemLabel) {
+      itemLabel.textContent = "Crafting";
+    }
+
+    itemInput.innerHTML = `
+      <option value="">
+        Pilih Crafting
+      </option>
+
+      ${contributionCraftings
+        .map(
+          (crafting) => `
+            <option value="${crafting.id}">
+              ${escapeContributionHTML(crafting.name)}
+            </option>
+          `,
+        )
+        .join("")}
+    `;
+
+    priceInput.value = "";
+    priceInput.readOnly = false;
+    priceInput.placeholder = "Masukkan harga satuan";
+
+    if (priceInfo) {
+      priceInfo.textContent = "Harga satuan Crafting diisi manual.";
+    }
+  }
+
+  calculateContributionTotal();
+}
+
+/* =========================================================
+   CONTRIBUTION ITEM
+========================================================= */
+
+function changeContributionItem() {
+  const type = document.getElementById("contributionType")?.value || "Material";
+
+  const itemInput = document.getElementById("contributionItem");
+  const priceInput = document.getElementById("contributionPrice");
+  const priceInfo = document.getElementById("contributionPriceInfo");
+
+  if (!itemInput || !priceInput) {
+    return;
+  }
+
+  const itemId = Number(itemInput.value) || null;
+
+  /* =========================
+     MATERIAL PRICE
+  ========================= */
+
+  if (type === "Material") {
+    const material = contributionMaterials.find(
+      (item) => Number(item.id) === itemId,
+    );
+
+    if (!material) {
+      priceInput.value = "";
+
+      if (priceInfo) {
+        priceInfo.textContent = "Harga otomatis mengikuti data Materials.";
+      }
+
+      calculateContributionTotal();
+
+      return;
+    }
+
+    priceInput.value = material.price;
+
+    if (priceInfo) {
+      priceInfo.textContent = `Harga ${material.name}: Rp ${Number(material.price).toLocaleString("id-ID")} • ${material.currency}`;
+    }
+  }
+
+  /* =========================
+     CRAFTING PRICE
+  ========================= */
+
+  if (type === "Crafting") {
+    priceInput.value = "";
+
+    if (priceInfo) {
+      priceInfo.textContent = "Masukkan harga satuan untuk Crafting ini.";
+    }
+  }
+
+  calculateContributionTotal();
+}
+
+/* =========================================================
    CALCULATE TOTAL
 ========================================================= */
 
@@ -580,10 +807,32 @@ async function saveContribution() {
   const memberId = Number(memberInput?.value) || null;
   const contributionDate = dateInput?.value || "";
   const type = typeInput?.value || "";
-  const itemName = itemInput?.value.trim() || "";
+  const itemId = Number(itemInput?.value) || null;
   const quantity = Number(quantityInput?.value) || 0;
   const unitPrice = Number(priceInput?.value) || 0;
   const notes = notesInput?.value.trim() || null;
+
+  /* =========================
+   RESOLVE ITEM NAME
+========================= */
+
+  let itemName = "";
+
+  if (type === "Material") {
+    const material = contributionMaterials.find(
+      (item) => Number(item.id) === itemId,
+    );
+
+    itemName = material?.name || "";
+  }
+
+  if (type === "Crafting") {
+    const crafting = contributionCraftings.find(
+      (item) => Number(item.id) === itemId,
+    );
+
+    itemName = crafting?.name || "";
+  }
 
   /* =========================
      VALIDATION
@@ -601,13 +850,18 @@ async function saveContribution() {
     return;
   }
 
-  if (!["Material", "Barang"].includes(type)) {
+  if (!["Material", "Crafting"].includes(type)) {
     alert("Jenis kontribusi tidak valid.");
     return;
   }
 
-  if (!itemName) {
-    alert("Nama barang / material wajib diisi.");
+  if (!itemId || !itemName) {
+    alert(
+      type === "Material"
+        ? "Pilih material terlebih dahulu."
+        : "Pilih crafting terlebih dahulu.",
+    );
+
     itemInput?.focus();
     return;
   }
@@ -757,10 +1011,12 @@ function editContribution(id) {
   const memberInput = document.getElementById("contributionMember");
   const dateInput = document.getElementById("contributionDate");
   const typeInput = document.getElementById("contributionType");
-  const itemInput = document.getElementById("contributionItem");
   const quantityInput = document.getElementById("contributionQuantity");
-  const priceInput = document.getElementById("contributionPrice");
   const notesInput = document.getElementById("contributionNotes");
+
+  /* =========================
+     BASIC DATA
+  ========================= */
 
   if (memberInput) {
     memberInput.value = String(contribution.member_id);
@@ -774,21 +1030,66 @@ function editContribution(id) {
     typeInput.value = contribution.type || "Material";
   }
 
-  if (itemInput) {
-    itemInput.value = contribution.item_name || "";
-  }
-
   if (quantityInput) {
     quantityInput.value = Number(contribution.quantity) || 0;
-  }
-
-  if (priceInput) {
-    priceInput.value = Number(contribution.unit_price) || 0;
   }
 
   if (notesInput) {
     notesInput.value = contribution.notes || "";
   }
+
+  /* =========================
+     RENDER ITEM BY TYPE
+  ========================= */
+
+  changeContributionType();
+
+  const itemInput = document.getElementById("contributionItem");
+  const priceInput = document.getElementById("contributionPrice");
+
+  /* =========================
+     MATERIAL
+  ========================= */
+
+  if (contribution.type === "Material") {
+    const material = contributionMaterials.find(
+      (item) =>
+        String(item.name || "").toLowerCase() ===
+        String(contribution.item_name || "").toLowerCase(),
+    );
+
+    if (material && itemInput) {
+      itemInput.value = String(material.id);
+    }
+
+    if (material && priceInput) {
+      priceInput.value = Number(material.price) || 0;
+    }
+  }
+
+  /* =========================
+     CRAFTING
+  ========================= */
+
+  if (contribution.type === "Crafting") {
+    const crafting = contributionCraftings.find(
+      (item) =>
+        String(item.name || "").toLowerCase() ===
+        String(contribution.item_name || "").toLowerCase(),
+    );
+
+    if (crafting && itemInput) {
+      itemInput.value = String(crafting.id);
+    }
+
+    if (priceInput) {
+      priceInput.value = Number(contribution.unit_price) || 0;
+    }
+  }
+
+  /* =========================
+     BUTTON
+  ========================= */
 
   const buttonText = document.getElementById("saveContributionText");
 
@@ -1256,6 +1557,8 @@ async function loadContributions() {
   `;
 
   await fetchContributionMembers();
+
+  await fetchContributionItems();
 
   await fetchContributionsFromSupabase();
 

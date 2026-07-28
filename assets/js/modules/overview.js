@@ -371,6 +371,110 @@ function overviewPage() {
     0,
   );
 
+  /* =====================================================
+     TOP CONTRIBUTOR
+  ===================================================== */
+
+  const contributorStats = {};
+
+  /* =========================
+       INITIALIZE MEMBERS
+    ========================= */
+
+  overviewMembers.forEach((member) => {
+    const memberId = Number(member.id);
+
+    contributorStats[memberId] = {
+      id: memberId,
+      name: member.name || "Tanpa Nama",
+      attendances: 0,
+      leaderCount: 0,
+      contributions: 0,
+      contributionValue: 0,
+      points: 0,
+    };
+  });
+
+  /* =========================
+       ACTIVITY + ATTENDANCE
+    ========================= */
+
+  overviewActivities.forEach((activity) => {
+    const leaderId = Number(activity.leader_id);
+
+    // Leader mendapatkan 15 poin
+    if (leaderId && contributorStats[leaderId]) {
+      contributorStats[leaderId].leaderCount += 1;
+      contributorStats[leaderId].points += 15;
+    }
+
+    // Setiap kehadiran mendapatkan 10 poin
+    (activity.activity_attendances || []).forEach((attendance) => {
+      const memberId = Number(attendance.member_id);
+
+      if (!contributorStats[memberId]) {
+        return;
+      }
+
+      contributorStats[memberId].attendances += 1;
+      contributorStats[memberId].points += 10;
+    });
+  });
+
+  /* =========================
+       CONTRIBUTIONS
+    ========================= */
+
+  overviewContributions.forEach((contribution) => {
+    const memberId = Number(contribution.member_id);
+
+    if (!contributorStats[memberId]) {
+      return;
+    }
+
+    const quantity = Number(contribution.quantity) || 0;
+    const unitPrice = Number(contribution.unit_price) || 0;
+
+    const contributionValue =
+      Number(contribution.total_value) || quantity * unitPrice;
+
+    contributorStats[memberId].contributions += 1;
+
+    contributorStats[memberId].contributionValue += contributionValue;
+
+    // Setiap setoran mendapatkan 5 poin
+    contributorStats[memberId].points += 5;
+  });
+
+  /* =========================
+       RANKING
+    ========================= */
+
+  const topContributors = Object.values(contributorStats)
+    .filter((member) => member.points > 0)
+    .sort((a, b) => {
+      // Prioritas pertama: poin
+      if (b.points !== a.points) {
+        return b.points - a.points;
+      }
+
+      // Jika poin sama: kehadiran
+      if (b.attendances !== a.attendances) {
+        return b.attendances - a.attendances;
+      }
+
+      // Jika masih sama: jumlah setoran
+      if (b.contributions !== a.contributions) {
+        return b.contributions - a.contributions;
+      }
+
+      // Terakhir: nilai setoran
+      return b.contributionValue - a.contributionValue;
+    })
+    .slice(0, 5);
+
+  console.log("Top contributors:", topContributors);
+
   const totalTransactions = transactions.length;
 
   const totalRevenue = transactions.reduce((total, item) => {
@@ -872,6 +976,8 @@ function overviewPage() {
         <!-- RIGHT -->
         <div class="xl:col-span-4 space-y-6">
 
+         ${topContributorCard(topContributors)}
+
           ${topCustomerCard(topCustomers)}
 
           ${topCraftingCard(topCraftings)}
@@ -1332,6 +1438,237 @@ function progressCard(progress, completed, processing, totalTransactions) {
 }
 
 /* =========================================================
+   TOP CONTRIBUTOR CARD
+========================================================= */
+
+function topContributorCard(topContributors) {
+  const rankIcons = ["trophy", "medal", "award"];
+
+  return `
+    <div class="card">
+
+      <div class="flex items-center justify-between gap-4 mb-6">
+
+        <div class="flex items-center gap-3">
+
+          <div
+            class="
+              w-10 h-10
+              rounded-xl
+              bg-yellow-500/10
+              border border-yellow-500/20
+              flex items-center justify-center
+            "
+          >
+            <i
+              data-lucide="trophy"
+              class="w-5 h-5 text-yellow-400"
+            ></i>
+          </div>
+
+          <div>
+            <h2 class="text-lg font-bold">
+              Top Kontributor
+            </h2>
+
+            <p class="text-xs text-zinc-500 mt-1">
+              Ranking kontribusi anggota BLACK LINE.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+      ${
+        topContributors.length === 0
+          ? `
+            <div
+              class="
+                border
+                border-dashed
+                border-zinc-800
+                rounded-xl
+                py-10
+                px-5
+                text-center
+              "
+            >
+
+              <i
+                data-lucide="trophy"
+                class="
+                  w-7 h-7
+                  text-zinc-600
+                  mx-auto
+                  mb-3
+                "
+              ></i>
+
+              <div class="font-medium text-zinc-400">
+                Belum ada kontributor
+              </div>
+
+              <div class="text-xs text-zinc-600 mt-2">
+                Ranking akan muncul setelah anggota mengikuti aktivitas atau melakukan setoran.
+              </div>
+
+            </div>
+          `
+          : `
+            <div class="space-y-3">
+
+              ${topContributors
+                .map((member, index) => {
+                  const rank = index + 1;
+
+                  const rankColor =
+                    rank === 1
+                      ? "text-yellow-400"
+                      : rank === 2
+                        ? "text-zinc-300"
+                        : rank === 3
+                          ? "text-orange-400"
+                          : "text-zinc-500";
+
+                  const rankBg =
+                    rank === 1
+                      ? "bg-yellow-500/10 border-yellow-500/20"
+                      : rank === 2
+                        ? "bg-zinc-500/10 border-zinc-500/20"
+                        : rank === 3
+                          ? "bg-orange-500/10 border-orange-500/20"
+                          : "bg-zinc-800/50 border-zinc-700";
+
+                  const icon = rankIcons[index] || "user-round";
+
+                  return `
+                    <div
+                      class="
+                        flex
+                        items-center
+                        justify-between
+                        gap-4
+                        border
+                        border-zinc-800
+                        bg-zinc-900/40
+                        rounded-xl
+                        p-4
+                      "
+                    >
+
+                      <div class="flex items-center gap-4 min-w-0">
+
+                        <div
+                          class="
+                            w-10 h-10
+                            rounded-xl
+                            border
+                            ${rankBg}
+                            flex
+                            items-center
+                            justify-center
+                            shrink-0
+                          "
+                        >
+                          ${
+                            rank <= 3
+                              ? `
+                                <i
+                                  data-lucide="${icon}"
+                                  class="w-5 h-5 ${rankColor}"
+                                ></i>
+                              `
+                              : `
+                                <span class="text-sm font-black ${rankColor}">
+                                  ${rank}
+                                </span>
+                              `
+                          }
+                        </div>
+
+                        <div class="min-w-0">
+
+                          <div
+                            class="
+                              font-bold
+                              text-zinc-100
+                              truncate
+                            "
+                          >
+                            ${escapeOverviewHTML(member.name)}
+                          </div>
+
+                          <div
+                            class="
+                              flex
+                              flex-wrap
+                              items-center
+                              gap-x-3
+                              gap-y-1
+                              text-[11px]
+                              text-zinc-500
+                              mt-1.5
+                            "
+                          >
+
+                            <span>
+                              Hadir ${member.attendances}x
+                            </span>
+
+                            <span>
+                              Leader ${member.leaderCount}x
+                            </span>
+
+                            <span>
+                              Setoran ${member.contributions}x
+                            </span>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                      <div class="text-right shrink-0">
+
+                        <div
+                          class="
+                            text-xl
+                            font-black
+                            ${rank === 1 ? "text-yellow-400" : "text-zinc-200"}
+                          "
+                        >
+                          ${member.points}
+                        </div>
+
+                        <div
+                          class="
+                            text-[10px]
+                            uppercase
+                            tracking-widest
+                            text-zinc-600
+                          "
+                        >
+                          Poin
+                        </div>
+
+                      </div>
+
+                    </div>
+                  `;
+                })
+                .join("")}
+
+            </div>
+          `
+      }
+
+    </div>
+  `;
+}
+
+/* =========================================================
    ACTIVITY ITEM
 ========================================================= */
 
@@ -1638,6 +1975,19 @@ function emptyTransactionState() {
 
     </div>
   `;
+}
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeOverviewHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 /* =========================================================
