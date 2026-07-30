@@ -257,7 +257,7 @@ function settingsPage() {
 ========================================================= */
 
 function loadSettings() {
-  setActiveMenu("menu-settings");
+  setActiveMenu("settings");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Settings");

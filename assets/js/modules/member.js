@@ -207,7 +207,7 @@ function memberPage() {
 ========================================================= */
 
 async function loadMembers() {
-  setActiveMenu("menu-members");
+  setActiveMenu("members");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Members");

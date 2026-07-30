@@ -49,7 +49,7 @@ function setActiveMenu(menuId) {
     menu.classList.remove("active");
   });
 
-  document.getElementById(menuId)?.classList.add("active");
+  document.getElementById(`menu-${menuId}`)?.classList.add("active");
 }
 
 function setPageTitle(title) {
@@ -94,4 +94,37 @@ function updateSidebarIcon() {
   );
 
   lucide.createIcons();
+}
+
+function setPage(menuId, title) {
+  setActiveMenu(menuId);
+  setPageTitle(title);
+}
+
+function showToast(message, type = "success") {
+  const oldToast = document.getElementById("app-toast");
+
+  if (oldToast) {
+    oldToast.remove();
+  }
+
+  const toast = document.createElement("div");
+
+  toast.id = "app-toast";
+
+  toast.className = `
+    fixed top-6 right-6 z-50
+    px-5 py-3 rounded-xl shadow-xl
+    text-white font-medium
+    transition-all duration-300
+    ${type === "success" ? "bg-green-600" : "bg-red-600"}
+  `;
+
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
 }

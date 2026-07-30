@@ -1688,7 +1688,7 @@ async function deleteActivity(id) {
 ========================================================= */
 
 async function loadActivities() {
-  setActiveMenu("menu-activities");
+  setActiveMenu("activities");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Aktivitas Kelompok");

@@ -73,7 +73,9 @@ function transactionsPage() {
 }
 
 async function loadTransactions() {
-  setActiveMenu("menu-transactions");
+  setActiveMenu("transactions");
+
+  document.getElementById("pageTitle").textContent = "Transactions";
 
   document.getElementById("app").innerHTML = transactionsPage();
 
@@ -126,9 +128,7 @@ function renderTransactions() {
 
             <div class="text-right">
 
-              <div class="text-green-400 font-bold">
-                Rp ${Number(item.total_sell_price).toLocaleString("id-ID")}
-              </div>
+              
 
               <div class="text-sm mt-2">
                 ${formatTransactionStatus(item.status)}

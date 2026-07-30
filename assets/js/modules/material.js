@@ -324,7 +324,7 @@ async function deleteMaterial(id) {
 }
 
 async function loadMaterials() {
-  setActiveMenu("menu-material");
+  setActiveMenu("material");
   setPageTitle("Materials");
 
   document.getElementById("app").innerHTML = materialPage();

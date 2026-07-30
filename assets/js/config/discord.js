@@ -1,0 +1,5 @@
+const DISCORD_WEBHOOK = {
+  deposit: "PASTE_WEBHOOK_DEPOSIT_DISINI",
+
+  withdraw: "PASTE_WEBHOOK_WITHDRAW_DISINI",
+};

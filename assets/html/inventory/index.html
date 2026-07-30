@@ -1,0 +1,40 @@
+<div class="space-y-6">
+
+    <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">
+            Inventory
+        </h2>
+
+        <input
+            id="inventorySearch"
+            type="text"
+            placeholder="Search item..."
+            class="w-72 rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-2 outline-none focus:border-red-500"
+        />
+    </div>
+
+    <div class="grid grid-cols-12 gap-6">
+
+        <!-- Inventory -->
+        <div class="col-span-8">
+            <div
+                id="inventoryGrid"
+                class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5"
+            ></div>
+        </div>
+
+        <!-- Detail -->
+        <div class="col-span-4">
+
+            <div
+                id="inventoryDetail"
+                class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6"
+            >
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

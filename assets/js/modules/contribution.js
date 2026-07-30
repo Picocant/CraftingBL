@@ -1542,7 +1542,7 @@ function formatContributionDate(value) {
 ========================================================= */
 
 async function loadContributions() {
-  setActiveMenu("menu-contributions");
+  setActiveMenu("contributions");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Kontribusi Kerja");

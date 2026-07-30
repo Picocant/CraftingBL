@@ -41,123 +41,149 @@
         </div>
 
         <!-- MENU -->
-        <nav class="flex-1 px-3 py-5 space-y-2 overflow-hidden">
-          <button
-            id="menu-overview"
-            class="menu-item active"
-            onclick="loadOverview()"
-            title="Overview"
-          >
-            <i data-lucide="layout-dashboard"></i>
+        <nav class="sidebar-nav py-5">
+          <div class="px-3 space-y-2">
+            <button
+              id="menu-overview"
+              class="menu-item active"
+              onclick="loadOverview()"
+              title="Overview"
+            >
+              <i data-lucide="layout-dashboard"></i>
 
-            <span class="menu-text"> Overview </span>
-          </button>
+              <span class="menu-text"> Overview </span>
+            </button>
 
-          <button
-            id="menu-calculator"
-            class="menu-item"
-            onclick="loadPlanner()"
-            title="Production Planner"
-          >
-            <i data-lucide="clipboard-list"></i>
+            <button
+              id="menu-calculator"
+              class="menu-item"
+              onclick="loadPlanner()"
+              title="Production Planner"
+            >
+              <i data-lucide="clipboard-list"></i>
 
-            <span class="menu-text"> Production Planner </span>
-          </button>
+              <span class="menu-text"> Production Planner </span>
+            </button>
 
-          <button
-            id="menu-transactions"
-            class="menu-item"
-            onclick="loadTransactions()"
-            title="Transactions"
-          >
-            <i data-lucide="receipt-text"></i>
+            <button
+              id="menu-transactions"
+              class="menu-item"
+              onclick="loadTransactions()"
+              title="Transactions"
+            >
+              <i data-lucide="receipt-text"></i>
 
-            <span class="menu-text"> Transactions </span>
-          </button>
+              <span class="menu-text"> Transactions </span>
+            </button>
 
-          <button
-            id="menu-members"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadMembers()"
-            title="Members"
-          >
-            <i data-lucide="users"></i>
+            <button
+              id="menu-members"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadMembers()"
+              title="Members"
+            >
+              <i data-lucide="users"></i>
 
-            <span class="menu-text"> Members </span>
-          </button>
+              <span class="menu-text"> Members </span>
+            </button>
 
-          <button
-            id="menu-activities"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadActivities()"
-            title="Aktivitas Kelompok"
-          >
-            <i data-lucide="calendar-check-2"></i>
+            <button
+              id="menu-activities"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadActivities()"
+              title="Aktivitas Kelompok"
+            >
+              <i data-lucide="calendar-check-2"></i>
 
-            <span class="menu-text"> Aktivitas </span>
-          </button>
+              <span class="menu-text"> Aktivitas </span>
+            </button>
 
-          <button
-            id="menu-contributions"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadContributions()"
-            title="Kontribusi Kerja"
-          >
-            <i data-lucide="package-plus"></i>
+            <button
+              id="menu-contributions"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadContributions()"
+              title="Kontribusi Kerja"
+            >
+              <i data-lucide="package-plus"></i>
 
-            <span class="menu-text"> Kontribusi </span>
-          </button>
+              <span class="menu-text"> Kontribusi </span>
+            </button>
 
-          <button
-            id="menu-salary"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadSalary()"
-            title="Gaji Anggota"
-          >
-            <i data-lucide="wallet-cards"></i>
+            <button
+              id="menu-inventory"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadInventory()"
+              title="Inventory"
+            >
+              <i data-lucide="package"></i>
 
-            <span class="menu-text"> Gaji </span>
-          </button>
+              <span class="menu-text"> Inventory </span>
+            </button>
 
-          <button
-            id="menu-material"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadMaterials()"
-            title="Materials"
-          >
-            <i data-lucide="boxes"></i>
+            <button
+              id="menu-weapon-registry"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadWeaponRegistry()"
+              title="Weapon Registry"
+            >
+              <i data-lucide="shield-plus"></i>
 
-            <span class="menu-text"> Materials </span>
-          </button>
+              <span class="menu-text"> Weapon Registry </span>
+            </button>
 
-          <button
-            id="menu-crafting"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadCraftings()"
-            title="Craftings"
-          >
-            <i data-lucide="hammer"></i>
+            <button
+              id="menu-salary"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadSalary()"
+              title="Gaji Anggota"
+            >
+              <i data-lucide="wallet-cards"></i>
 
-            <span class="menu-text"> Craftings </span>
-          </button>
+              <span class="menu-text"> Gaji </span>
+            </button>
 
-          <button
-            id="menu-settings"
-            class="menu-item"
-            data-access="admin"
-            onclick="loadSettings()"
-            title="Settings"
-          >
-            <i data-lucide="settings"></i>
+            <button
+              id="menu-material"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadMaterials()"
+              title="Materials"
+            >
+              <i data-lucide="boxes"></i>
 
-            <span class="menu-text"> Settings </span>
-          </button>
+              <span class="menu-text"> Materials </span>
+            </button>
+
+            <button
+              id="menu-crafting"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadCraftings()"
+              title="Craftings"
+            >
+              <i data-lucide="hammer"></i>
+
+              <span class="menu-text"> Craftings </span>
+            </button>
+
+            <button
+              id="menu-settings"
+              class="menu-item"
+              data-access="admin"
+              onclick="loadSettings()"
+              title="Settings"
+            >
+              <i data-lucide="settings"></i>
+
+              <span class="menu-text"> Settings </span>
+            </button>
+          </div>
         </nav>
 
         <!-- FOOTER -->
@@ -246,6 +272,7 @@
     <script src="assets/js/modules/member.js"></script>
     <script src="assets/js/modules/material.js"></script>
     <script src="assets/js/modules/crafting.js"></script>
+    <script src="assets/js/modules/inventory.js"></script>
     <script src="assets/js/modules/planner.js"></script>
     <script src="assets/js/modules/transaction.js"></script>
     <script src="assets/js/modules/settings.js"></script>
@@ -253,6 +280,7 @@
     <script src="assets/js/modules/activity.js"></script>
     <script src="assets/js/modules/contribution.js"></script>
     <script src="assets/js/modules/salary.js"></script>
+    <script src="assets/js/modules/weaponRegistry.js"></script>
 
     <!-- APP -->
     <script src="assets/js/app.js"></script>

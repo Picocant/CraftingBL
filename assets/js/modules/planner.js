@@ -5,12 +5,124 @@ let productionItems = [
   },
 ];
 
-let payment = {
-  method: "dirty",
-  cashPercent: 50,
+const paymentMethods = [
+  {
+    id: "dirty",
+
+    category: "cash",
+
+    type: "full",
+
+    money: "dirty",
+
+    material: false,
+
+    icon: "banknote",
+
+    title: "Full Dirty",
+
+    description: "100% Dirty Money",
+
+    color: "text-red-400",
+
+    enabled: true,
+  },
+
+  {
+    id: "clean",
+
+    category: "cash",
+
+    type: "full",
+
+    money: "clean",
+
+    material: false,
+
+    icon: "badge-dollar-sign",
+
+    title: "Full Clean",
+
+    description: "100% Clean Money",
+
+    color: "text-green-400",
+
+    enabled: true,
+  },
+
+  {
+    id: "hybrid50Money",
+    category: "cash",
+
+    type: "hybrid",
+    split: "fixed",
+    money: ["dirty", "clean"],
+    material: false,
+
+    icon: "scale",
+    title: "Hybrid Money 50/50",
+    description: "50% Dirty + 50% Clean",
+    color: "text-cyan-400",
+    enabled: true,
+  },
+
+  {
+    id: "hybridCustomMoney",
+    category: "cash",
+
+    type: "hybrid",
+    split: "custom",
+    money: ["dirty", "clean"],
+    material: false,
+
+    icon: "wallet",
+    title: "Hybrid Money Custom",
+    description: "Dirty + Clean (Custom)",
+    color: "text-indigo-400",
+    enabled: true,
+  },
+
+  {
+    id: "hybrid50Material",
+    category: "cashMaterial",
+    icon: "package",
+    title: "Hybrid Material 50/50",
+    description: "50% Dirty + 50% Material",
+    color: "text-yellow-400",
+    enabled: true,
+  },
+
+  {
+    id: "hybridCustomMaterial",
+    category: "cashMaterial",
+    icon: "boxes",
+    title: "Hybrid Material Custom",
+    description: "Dirty + Material (Custom)",
+    color: "text-orange-400",
+    enabled: true,
+  },
+];
+
+const paymentConfig = {
+  defaultCashPercent: 50,
+
+  cleanCalculation: "multiplier",
+
   cleanMultiplier: 2,
+
+  cleanBonusPercent: 70,
 };
 
+let paymentCategory = "cash";
+
+const defaultMethod = paymentMethods.find(
+  (method) => method.enabled && method.category === "cash",
+);
+
+let payment = {
+  method: defaultMethod ? defaultMethod.id : "",
+  cashPercent: paymentConfig.defaultCashPercent,
+};
 /* =========================================================
    PAGE
 ========================================================= */
@@ -356,6 +468,75 @@ function plannerPage() {
 
         </div>
 
+               <div class="grid sm:grid-cols-2 gap-3 mb-6">
+
+                <label
+                  class="
+                    cursor-pointer
+                    rounded-xl
+                    border
+                    p-4
+                    transition-all
+                    ${
+                      paymentCategory === "cash"
+                        ? "border-red-500 bg-red-500/5"
+                        : "border-zinc-800 bg-zinc-900"
+                    }
+                  "
+                >
+
+                  <input
+                    type="radio"
+                    name="paymentCategory"
+                    class="hidden"
+                    ${paymentCategory === "cash" ? "checked" : ""}
+                    onchange="changePaymentCategory('cash')"
+                  >
+
+                  <div class="font-semibold">
+                    Full Cash
+                  </div>
+
+                  <div class="text-xs text-zinc-500 mt-1">
+                    Pembayaran menggunakan uang.
+                  </div>
+
+                </label>
+
+                <label
+                  class="
+                    cursor-pointer
+                    rounded-xl
+                    border
+                    p-4
+                    transition-all
+                    ${
+                      paymentCategory === "cashMaterial"
+                        ? "border-red-500 bg-red-500/5"
+                        : "border-zinc-800 bg-zinc-900"
+                    }
+                  "
+                >
+
+                  <input
+                    type="radio"
+                    name="paymentCategory"
+                    class="hidden"
+                    ${paymentCategory === "cashMaterial" ? "checked" : ""}
+                    onchange="changePaymentCategory('cashMaterial')"
+                  >
+
+                  <div class="font-semibold">
+                    Cash + Material
+                  </div>
+
+                  <div class="text-xs text-zinc-500 mt-1">
+                    Sebagian dibayar uang, sebagian menggunakan material.
+                  </div>
+
+                </label>
+
+              </div>
 
         <div
           id="paymentMethod"
@@ -367,37 +548,20 @@ function plannerPage() {
           "
         >
 
-          ${paymentOption(
-            "dirty",
-            "banknote",
-            "Full Dirty",
-            "100% Dirty Money",
-            "text-red-400",
-          )}
-
-          ${paymentOption(
-            "clean",
-            "badge-dollar-sign",
-            "Full Clean",
-            "100% Clean Money",
-            "text-green-400",
-          )}
-
-          ${paymentOption(
-            "hybrid50",
-            "split",
-            "Hybrid 50 / 50",
-            "50% cash + 50% material",
-            "text-yellow-400",
-          )}
-
-          ${paymentOption(
-            "hybridCustom",
-            "sliders-horizontal",
-            "Hybrid Custom",
-            "Atur persentase sendiri",
-            "text-blue-400",
-          )}
+          ${paymentMethods
+            .filter((method) => {
+              return method.enabled && method.category === paymentCategory;
+            })
+            .map((method) =>
+              paymentOption(
+                method.id,
+                method.icon,
+                method.title,
+                method.description,
+                method.color,
+              ),
+            )
+            .join("")}
 
         </div>
 
@@ -406,7 +570,13 @@ function plannerPage() {
         <div
           id="customPercent"
           class="
-            ${payment.method === "hybridCustom" ? "" : "hidden"}
+            ${
+              ["hybridCustomMaterial", "hybridCustomMoney"].includes(
+                payment.method,
+              )
+                ? ""
+                : "hidden"
+            }
             mt-5
             pt-5
             border-t
@@ -420,7 +590,11 @@ function plannerPage() {
               for="cashPercent"
               class="text-sm font-medium"
             >
-              Persentase Cash
+              ${
+                payment.method === "hybridCustomMoney"
+                  ? "Persentase Dirty Money"
+                  : "Persentase Cash / Dirty Money"
+              }
             </label>
 
             <strong
@@ -445,23 +619,25 @@ function plannerPage() {
           >
 
 
-          <div
-            class="
-              flex
-              justify-between
-              text-xs
-              text-zinc-600
-              mt-2
-            "
-          >
+              <div class=" flex justify-between text-xs text-zinc-600 mt-2">
 
-            <span>0%</span>
+                <span>
+                  ${payment.method === "hybridCustomMoney" ? "100% Clean" : "100% Material"}
+                </span>
 
-            <span>Cash</span>
+                <span>
+                  ${
+                    payment.method === "hybridCustomMoney"
+                      ? "Dirty ↔ Clean"
+                      : "Dirty ↔ Material"
+                  }
+                </span>
 
-            <span>100%</span>
+                <span>
+                  100% Dirty
+                </span>
 
-          </div>
+              </div>
 
         </div>
 
@@ -742,6 +918,21 @@ function paymentOption(
   `;
 }
 
+function changePaymentCategory(category) {
+  paymentCategory = category;
+
+  // Cari metode pertama yang aktif pada kategori ini
+  const defaultMethod = paymentMethods.find(
+    (method) => method.enabled && method.category === category,
+  );
+
+  if (defaultMethod) {
+    payment.method = defaultMethod.id;
+  }
+
+  changePaymentMethod(payment.method);
+}
+
 /* =========================================================
    LOAD / REFRESH
 ========================================================= */
@@ -758,7 +949,7 @@ function refreshPlanner() {
 }
 
 async function loadPlanner() {
-  setActiveMenu("menu-calculator");
+  setActiveMenu("calculator");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Production Planner");
@@ -1254,6 +1445,31 @@ function getTotalSellPrice() {
   return total;
 }
 
+function calculateCleanMoney(amount) {
+  let result;
+
+  switch (paymentConfig.cleanCalculation) {
+    case "multiplier":
+      result = amount * paymentConfig.cleanMultiplier;
+      break;
+
+    case "percentage":
+      result = amount * (1 + paymentConfig.cleanBonusPercent / 100);
+      break;
+
+    default:
+      result = amount;
+  }
+
+  console.log({
+    amount,
+    config: paymentConfig,
+    result,
+  });
+
+  return result;
+}
+
 /* =========================================================
    TOTAL MATERIAL
 ========================================================= */
@@ -1340,57 +1556,90 @@ function getTransactionResult() {
 
   const summary = getMaterialSummary();
 
+  const paymentMethod = paymentMethods.find(
+    (method) => method.id === payment.method,
+  );
+
+  if (!paymentMethod) {
+    return {
+      method: "",
+      totalSellPrice: 0,
+      dirtyMoney: 0,
+      cleanMoney: 0,
+      cashPercent: 0,
+      materialPercent: 0,
+      cleanMultiplier: paymentConfig.cleanMultiplier,
+      materials: [],
+    };
+  }
+
   switch (payment.method) {
     case "dirty":
+    case "clean": {
+      const isClean = paymentMethod.money === "clean";
+
       return {
-        method: "dirty",
+        method: paymentMethod.id,
+
         totalSellPrice,
-        dirtyMoney: totalSellPrice,
-        cleanMoney: 0,
+
+        dirtyMoney: isClean ? 0 : totalSellPrice,
+
+        cleanMoney: isClean ? calculateCleanMoney(totalSellPrice) : 0,
+        // cleanMoney: isClean ? totalSellPrice * paymentConfig.cleanMultiplier : 0,
+
         cashPercent: 100,
+
         materialPercent: 0,
-        cleanMultiplier: payment.cleanMultiplier,
+
+        cleanMultiplier: paymentConfig.cleanMultiplier,
+
         materials: [],
-      };
-
-    case "clean":
-      return {
-        method: "clean",
-        totalSellPrice,
-        dirtyMoney: 0,
-        cleanMoney: totalSellPrice * payment.cleanMultiplier,
-        cashPercent: 100,
-        materialPercent: 0,
-        cleanMultiplier: payment.cleanMultiplier,
-        materials: [],
-      };
-
-    case "hybrid50": {
-      const cashPercent = 50;
-
-      const materials = summary.materials.map(
-        ({ id, name, qty, currency }) => ({
-          id,
-          name,
-          qty: Math.ceil(qty * 0.5),
-          currency,
-        }),
-      );
-
-      return {
-        method: "hybrid50",
-        totalSellPrice,
-        dirtyMoney: totalSellPrice * (cashPercent / 100),
-        cleanMoney: 0,
-        cashPercent,
-        materialPercent: 50,
-        cleanMultiplier: payment.cleanMultiplier,
-        materials,
       };
     }
 
-    case "hybridCustom": {
-      const materialPercent = 100 - payment.cashPercent;
+    case "hybrid50Money":
+    case "hybridCustomMoney": {
+      const dirtyPercent =
+        paymentMethod.split === "fixed" ? 50 : payment.cashPercent;
+
+      const cleanPercent = 100 - dirtyPercent;
+
+      const dirtyMoney = totalSellPrice * (dirtyPercent / 100);
+
+      const cleanAmount = totalSellPrice * (cleanPercent / 100);
+
+      const cleanMoney = calculateCleanMoney(cleanAmount);
+
+      return {
+        method: paymentMethod.id,
+
+        totalSellPrice,
+
+        dirtyMoney,
+
+        cleanMoney,
+
+        cashPercent: 100,
+
+        materialPercent: 0,
+
+        cleanMultiplier: paymentConfig.cleanMultiplier,
+
+        dirtyPercent,
+
+        cleanPercent,
+
+        materials: [],
+      };
+    }
+
+    case "hybrid50Material":
+    case "hybridCustomMaterial": {
+      const cashPercent =
+        paymentMethod.split === "fixed" ? 50 : payment.cashPercent;
+
+      const materialPercent = 100 - cashPercent;
 
       const materials = summary.materials.map(
         ({ id, name, qty, currency }) => ({
@@ -1402,18 +1651,19 @@ function getTransactionResult() {
       );
 
       return {
-        method: "hybridCustom",
+        method: paymentMethod.id,
+
         totalSellPrice,
 
-        dirtyMoney: totalSellPrice * (payment.cashPercent / 100),
+        dirtyMoney: totalSellPrice * (cashPercent / 100),
 
         cleanMoney: 0,
 
-        cashPercent: payment.cashPercent,
+        cashPercent,
 
         materialPercent,
 
-        cleanMultiplier: payment.cleanMultiplier,
+        cleanMultiplier: paymentConfig.cleanMultiplier,
 
         materials,
       };
@@ -1427,7 +1677,7 @@ function getTransactionResult() {
         cleanMoney: 0,
         cashPercent: payment.cashPercent,
         materialPercent: 100 - payment.cashPercent,
-        cleanMultiplier: payment.cleanMultiplier,
+        cleanMultiplier: paymentConfig.cleanMultiplier,
         materials: [],
       };
   }
@@ -1453,20 +1703,28 @@ function renderTransactionSummary() {
       container.innerHTML = renderCleanTransaction(transaction);
       break;
 
-    case "hybrid50":
+    case "hybrid50Material":
       container.innerHTML = renderHybrid50Transaction(transaction);
       break;
 
-    case "hybridCustom":
+    case "hybridCustomMaterial":
       container.innerHTML = renderHybridCustomTransaction(transaction);
+      break;
+
+    case "hybrid50Money":
+      container.innerHTML = renderHybridMoney50Transaction(transaction);
+      break;
+
+    case "hybridCustomMoney":
+      container.innerHTML = renderHybridMoneyCustomTransaction(transaction);
       break;
 
     default:
       container.innerHTML = `
-        <p class="text-zinc-500">
-          Metode belum dibuat.
-        </p>
-      `;
+      <p class="text-zinc-500">
+        Metode belum dibuat.
+      </p>
+    `;
   }
 
   if (typeof lucide !== "undefined") {
@@ -1592,6 +1850,61 @@ function renderCleanTransaction(transaction) {
   `;
 }
 
+function renderHybridMoney50Transaction(transaction) {
+  return `
+    <div class="space-y-5">
+
+      <div class="grid sm:grid-cols-2 gap-3">
+
+        ${smallTransactionStat("Dirty Money", "50%")}
+
+        ${smallTransactionStat("Clean Money", "50%")}
+
+      </div>
+
+      ${transactionTotalRow(
+        "Dirty Money",
+        transaction.dirtyMoney,
+        "text-red-400",
+      )}
+
+      ${transactionTotalRow(
+        "Clean Money",
+        transaction.cleanMoney,
+        "text-green-400",
+      )}
+
+    </div>
+  `;
+}
+
+function renderHybridMoneyCustomTransaction(transaction) {
+  return `
+    <div class="space-y-5">
+
+      <div class="grid sm:grid-cols-2 gap-3">
+
+        ${smallTransactionStat("Dirty Money", `${transaction.dirtyPercent}%`)}
+
+        ${smallTransactionStat("Clean Money", `${transaction.cleanPercent}%`)}
+
+      </div>
+
+      ${transactionTotalRow(
+        "Dirty Money",
+        transaction.dirtyMoney,
+        "text-red-400",
+      )}
+
+      ${transactionTotalRow(
+        "Clean Money",
+        transaction.cleanMoney,
+        "text-green-400",
+      )}
+
+    </div>
+  `;
+}
 /* =========================================================
    HYBRID 50
 ========================================================= */
@@ -2037,11 +2350,18 @@ function resetPlanner() {
     },
   ];
 
+  const defaultMethod = paymentMethods.find(
+    (method) => method.enabled && method.category === "cash",
+  );
+
   payment = {
-    method: "dirty",
-    cashPercent: 50,
-    cleanMultiplier: 2,
+    method: defaultMethod ? defaultMethod.id : "",
+    cashPercent: paymentConfig.defaultCashPercent,
   };
+
+  console.log("Payment Config:", paymentConfig);
+
+  paymentCategory = "cash";
 
   loadPlanner();
 }

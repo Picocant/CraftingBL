@@ -156,3 +156,45 @@ function buildTransactionEmbed(transaction) {
     ],
   };
 }
+
+function buildInventoryEmbed(transaction) {
+  const isDeposit = transaction.action === "deposit";
+
+  return {
+    embeds: [
+      {
+        title: "📦 BLACK LINE Inventory System",
+
+        description: isDeposit
+          ? "```🟢 INVENTORY DEPOSIT```"
+          : "```🔴 INVENTORY WITHDRAW```",
+
+        color: isDeposit ? 0x22c55e : 0xef4444,
+
+        fields: [
+          {
+            name: "📦 ITEM",
+            value: `**${transaction.materialName}**`,
+            inline: false,
+          },
+          {
+            name: "📊 STOCK",
+            value:
+              `**Before** : ${transaction.before}\n` +
+              `${isDeposit ? "**Deposit**" : "**Withdraw**"} : ${
+                isDeposit ? "+" : "-"
+              }${transaction.quantity}\n` +
+              `**After** : ${transaction.after}`,
+            inline: false,
+          },
+        ],
+
+        footer: {
+          text: "BLACK LINE Inventory System",
+        },
+
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}

@@ -42,13 +42,13 @@ async function fetchOverviewTransactionsFromSupabase() {
       head: true,
     });
 
-  if (materialCountError) {
+    if (materialCountError) {
     console.error("Gagal mengambil jumlah material:", materialCountError);
 
     overviewMaterialCount = 0;
-  } else {
+    } else {
     overviewMaterialCount = materialCount || 0;
-  }
+    }
 
   const { count: craftingCount, error: craftingCountError } =
     await supabaseClient.from("craftings").select("*", {
@@ -56,22 +56,22 @@ async function fetchOverviewTransactionsFromSupabase() {
       head: true,
     });
 
-  if (craftingCountError) {
+    if (craftingCountError) {
     console.error("Gagal mengambil jumlah crafting:", craftingCountError);
 
     overviewCraftingCount = 0;
-  } else {
+   } else {
     overviewCraftingCount = craftingCount || 0;
-  }
+    }
 
-  if (error) {
+    if (error) {
     console.error("Gagal mengambil data overview:", error);
     supabaseOverviewTransactions = [];
     return;
-  }
+    }
 
   // Adapter Supabase -> format yang dipakai Overview lama
-  supabaseOverviewTransactions = (data || []).map((transaction) => ({
+    supabaseOverviewTransactions = (data || []).map((transaction) => ({
     id: transaction.id,
 
     createdAt: transaction.created_at,
@@ -165,26 +165,17 @@ async function fetchOverviewGroupData() {
     await supabaseClient
       .from("contributions")
       .select(
-        `
-        id,
-        member_id,
-        contribution_date,
-        type,
-        item_name,
-        quantity,
-        unit_price,
-        total_value
-      `,
+            `id, member_id, contribution_date, type, item_name, quantity, unit_price, total_value `,
       )
-      .order("contribution_date", { ascending: false });
+        .order("contribution_date", { ascending: false });
 
-  if (contributionsError) {
-    console.error("Gagal mengambil kontribusi overview:", contributionsError);
+        if (contributionsError) {
+          console.error("Gagal mengambil kontribusi overview:", contributionsError);
 
-    overviewContributions = [];
-  } else {
-    overviewContributions = contributions || [];
-  }
+          overviewContributions = [];
+        } else {
+          overviewContributions = contributions || [];
+        }
 
   console.log("Overview group data:", {
     members: overviewMembers,
@@ -1995,7 +1986,7 @@ function escapeOverviewHTML(value) {
 ========================================================= */
 
 async function loadOverview() {
-  setActiveMenu("menu-overview");
+  setActiveMenu("overview");
 
   setPageTitle("Overview");
 
@@ -2008,11 +1999,10 @@ async function loadOverview() {
     </div>
   `;
 
-  // Ambil transaksi terbaru dari Supabase
-  await fetchOverviewTransactionsFromSupabase();
-
-  // Ambil data kelompok
-  await fetchOverviewGroupData();
+  await Promise.all([
+    fetchOverviewTransactionsFromSupabase(),
+    fetchOverviewGroupData(),
+  ]);
 
   // Render dashboard setelah data selesai
   document.getElementById("app").innerHTML = overviewPage();

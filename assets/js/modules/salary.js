@@ -2571,7 +2571,7 @@ function parseSalaryDateForRange(value, endOfDay = false) {
 ========================================================= */
 
 async function loadSalary() {
-  setActiveMenu("menu-salary");
+  setActiveMenu("salary");
 
   if (typeof setPageTitle === "function") {
     setPageTitle("Gaji Anggota");

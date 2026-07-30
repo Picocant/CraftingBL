@@ -132,7 +132,9 @@ function craftingPage() {
 }
 
 async function loadCraftings() {
-  setActiveMenu("menu-crafting");
+  setActiveMenu("crafting");
+  
+  document.getElementById("pageTitle").textContent = "Crafting";
 
   document.getElementById("app").innerHTML = craftingPage();
 
