@@ -1,57 +1,148 @@
 <div class="grid gap-6 lg:grid-cols-3">
+  <!-- ================= FORM ================= -->
   <div class="lg:col-span-1">
     <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h3 class="text-lg font-bold mb-5">Registrasi Weapon</h3>
+      <h3 class="mb-5 text-lg font-bold">Registrasi Weapon</h3>
 
       <div class="space-y-5">
         <div>
-          <label class="block mb-2 text-sm text-zinc-400"> Nama Weapon </label>
+          <label class="mb-2 block text-sm text-zinc-400"> Nama Weapon </label>
 
           <select
             id="weaponCrafting"
-            class="w-full rounded-xl bg-zinc-950 border border-zinc-700 px-4 py-3"
+            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3"
           >
             <option value="">Pilih Weapon</option>
           </select>
         </div>
 
         <div>
-          <label class="block mb-2 text-sm text-zinc-400">
+          <label class="mb-2 block text-sm text-zinc-400">
             Serial Number
           </label>
 
           <input
             id="weaponSerial"
             type="text"
-            class="w-full rounded-xl bg-zinc-950 border border-zinc-700 px-4 py-3"
             placeholder="Masukkan Serial Number"
+            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3"
           />
         </div>
 
-        <button
-          id="btnSaveWeapon"
-          class="w-full rounded-xl bg-red-600 hover:bg-red-700 py-3 font-semibold"
-        >
-          Tambah
-        </button>
+        <div class="flex gap-3">
+          <button
+            id="btnSaveWeapon"
+            class="flex-1 rounded-xl bg-red-600 py-3 font-semibold hover:bg-red-700"
+          >
+            Tambah
+          </button>
+
+          <button
+            id="btnCancelWeapon"
+            class="hidden rounded-xl bg-zinc-700 px-5 py-3 font-semibold hover:bg-zinc-600"
+          >
+            Batal
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="mb-5">
-    <input
-      id="searchWeaponRegistry"
-      type="text"
-      placeholder="Cari Weapon atau Serial Number..."
-      class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3"
-    />
-  </div>
-
+  <!-- ================= LIST ================= -->
   <div class="lg:col-span-2">
-    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h3 class="text-lg font-bold mb-5">Daftar Weapon</h3>
+    <!-- Toolbar -->
+    <div class="mb-6 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+      <div class="space-y-4">
+        <!-- Baris Pertama -->
+        <div class="flex items-center justify-between gap-4">
+          <input
+            id="searchWeaponRegistry"
+            type="text"
+            placeholder="Cari weapon atau serial..."
+            class="w-96 rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 outline-none focus:border-red-500"
+          />
 
+          <button
+            onclick="exportWeaponRegistryExcel()"
+            class="rounded-lg bg-emerald-600 px-4 py-2 font-medium transition hover:bg-emerald-500"
+          >
+            Export Excel
+          </button>
+        </div>
+
+        <!-- Baris Kedua -->
+        <div class="flex items-center gap-5">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-zinc-400"> Tampilkan </span>
+
+            <select
+              id="weaponRegistryPerPage"
+              class="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2"
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+
+          <span id="weaponRegistryInfo" class="text-sm text-zinc-400">
+            Menampilkan 0–0 dari 0 data
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+      <!-- Header -->
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold text-white">Daftar Weapon</h2>
+
+          <p class="text-sm text-zinc-400">
+            Kelola seluruh serial weapon yang telah dibuat.
+          </p>
+        </div>
+
+        <div
+          id="weaponRegistryTotal"
+          class="rounded-xl border border-red-500/30 bg-red-500/10 px-5 py-3 text-center"
+        >
+          <div class="text-xs uppercase tracking-widest text-red-300">
+            Total Weapon
+          </div>
+
+          <div class="mt-1 text-2xl font-bold text-white">0</div>
+        </div>
+      </div>
+
+      <!-- Table -->
       <div id="weaponRegistryTable">Data belum tersedia.</div>
+
+      <!-- Pagination -->
+      <div id="weaponRegistryPagination" class="mt-6 flex justify-center">
+        <div class="flex items-center gap-2">
+          <button
+            id="btnPrevWeapon"
+            class="rounded-xl bg-zinc-800 px-4 py-2 transition hover:bg-zinc-700"
+          >
+            ← Prev
+          </button>
+
+          <div
+            id="weaponRegistryPageNumbers"
+            class="flex items-center gap-2"
+          ></div>
+
+          <button
+            id="btnNextWeapon"
+            class="rounded-xl bg-zinc-800 px-4 py-2 transition hover:bg-zinc-700"
+          >
+            Next →
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
