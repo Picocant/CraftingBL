@@ -4,6 +4,8 @@ let editingWeaponRegistryId = null;
 
 let weaponRegistry = [];
 
+const selectedWeapons = new Set();
+
 // Pagination
 let currentPage = 1;
 let perPage = 10;
@@ -56,6 +58,13 @@ async function loadWeaponRegistry() {
       await loadWeaponRegistryData();
     });
 
+  document
+    .getElementById("btnCancelSelectedWeapon")
+    ?.addEventListener("click", clearWeaponSelection);
+
+  document
+    .getElementById("btnDeleteSelectedWeapon")
+    ?.addEventListener("click", deleteSelectedWeapons);
   lucide.createIcons();
 }
 
@@ -78,7 +87,9 @@ async function loadWeaponCraftings() {
 function renderWeaponCraftingOptions() {
   const select = document.getElementById("weaponCrafting");
 
-  if (!select) return;
+  if (!select) {
+    return;
+  }
 
   select.innerHTML = `
     <option value="">Pilih Weapon</option>
@@ -253,47 +264,97 @@ function renderWeaponRegistryTable(data = weaponRegistry) {
   container.innerHTML = `
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-zinc-800">
-            <th class="text-left py-3">Weapon</th>
-            <th class="text-left py-3">Serial Number</th>
-            <th class="text-center py-3 w-24">Aksi</th>
+        <thead class="border-b border-zinc-800 bg-zinc-800/40">
+          <tr>
+
+            <th class="w-12 px-4 py-3 text-center">
+              <input
+                type="checkbox"
+                id="selectAllWeapons"
+                class="h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-red-600"
+              />
+            </th>
+
+            <th class="w-16 px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-zinc-400">
+              No
+            </th>
+
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-zinc-400">
+              Weapon
+            </th>
+
+            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-zinc-400">
+              Serial Number
+            </th>
+
+            <th class="w-28 px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-zinc-400">
+              Aksi
+            </th>
+
           </tr>
         </thead>
 
         <tbody>
-          ${data
-            .map(
-              (item) => `
-                <tr class="border-b border-zinc-800/50">
-                  <td class="py-3">${item.craftings?.name ?? "-"}</td>
-                  <td class="py-3 font-mono">${item.serial_number}</td>
-                  <td class="text-center py-3">
-                    <div class="flex items-center justify-center gap-2">
+            ${data
+              .map(
+                (item, index) => `
+                  <tr class="group border-b border-zinc-800/50 transition-colors duration-200 hover:bg-zinc-800/40">
 
-                      <button
-                        onclick="editWeaponRegistry(${item.id})"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 transition"
-                        title="Edit"
-                      >
-                        <i data-lucide="square-pen" class="w-4 h-4"></i>
-                      </button>
+                    <td class="px-4 py-4 text-center">
+                      <input
+                        type="checkbox"
+                        class="weapon-checkbox h-4 w-4 rounded border-zinc-600 bg-zinc-800 accent-red-600"
+                        data-id="${item.id}"
+                        ${selectedWeapons.has(item.id) ? "checked" : ""}
+                      />
+                    </td>
 
-                      <button
-                        onclick="deleteWeaponRegistry(${item.id})"
-                        class="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-red-600 hover:bg-red-700 transition"
-                        title="Hapus"
-                      >
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                      </button>
+                    <td class="w-16 px-4 py-4 text-center text-sm text-zinc-500">
+                      ${(currentPage - 1) * perPage + index + 1}
+                    </td>
 
-                    </div>
-                  </td>
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
+                    <!-- Weapon -->
+                    <td class="px-4 py-4">
+                      <span class="font-medium text-white">
+                        ${item.craftings?.name ?? "-"}
+                      </span>
+                    </td>
+
+                    <!-- Serial -->
+                    <td class="px-4 py-4">
+                      <span class="font-mono text-sm text-zinc-300">
+                        ${item.serial_number}
+                      </span>
+                    </td>
+
+                    <!-- Action -->
+                    <td class="px-4 py-4">
+                      <div class="flex items-center justify-center gap-2">
+
+                        <button
+                          onclick="editWeaponRegistry(${item.id})"
+                          title="Edit"
+                          class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/30"
+                        >
+                          <i data-lucide="square-pen" class="h-4 w-4"></i>
+                        </button>
+
+                        <button
+                          onclick="deleteWeaponRegistry(${item.id})"
+                          title="Hapus"
+                          class="flex h-8 w-8 items-center justify-center rounded-lg bg-red-600 text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-500 hover:shadow-lg hover:shadow-red-500/30"
+                        >
+                          <i data-lucide="trash-2" class="h-4 w-4"></i>
+                        </button>
+
+                      </div>
+                    </td>
+
+                  </tr>
+                `,
+              )
+              .join("")}
+          </tbody>
       </table>
     </div>
   `;
@@ -301,6 +362,14 @@ function renderWeaponRegistryTable(data = weaponRegistry) {
   lucide.createIcons();
 
   renderWeaponPagination();
+
+  initWeaponSelection();
+
+  initSelectAllWeapon();
+
+  updateSelectAllState();
+
+  updateSelectionToolbar();
 }
 
 function editWeaponRegistry(id) {
@@ -495,4 +564,127 @@ function renderWeaponPagination() {
 
     container.appendChild(button);
   });
+}
+
+function initWeaponSelection() {
+  document.querySelectorAll(".weapon-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", function () {
+      const id = Number(this.dataset.id);
+
+      if (this.checked) {
+        selectedWeapons.add(id);
+      } else {
+        selectedWeapons.delete(id);
+      }
+
+      updateSelectAllState();
+      updateSelectionToolbar();
+
+      console.log([...selectedWeapons]);
+    });
+  });
+}
+
+function initSelectAllWeapon() {
+  const selectAll = document.getElementById("selectAllWeapons");
+
+  if (!selectAll) return;
+
+  selectAll.addEventListener("change", function () {
+    const checked = this.checked;
+
+    document.querySelectorAll(".weapon-checkbox").forEach((checkbox) => {
+      checkbox.checked = checked;
+
+      const id = Number(checkbox.dataset.id);
+
+      if (checked) {
+        selectedWeapons.add(id);
+      } else {
+        selectedWeapons.delete(id);
+      }
+    });
+
+    updateSelectionToolbar();
+    updateSelectAllState();
+
+    console.log([...selectedWeapons]);
+  });
+}
+
+function updateSelectionToolbar() {
+  const normalToolbar = document.getElementById("weaponNormalToolbar");
+  const selectionToolbar = document.getElementById("weaponSelectionToolbar");
+  const counter = document.getElementById("selectedWeaponCount");
+
+  if (!normalToolbar || !selectionToolbar || !counter) return;
+
+  const total = selectedWeapons.size;
+
+  counter.textContent = total;
+
+  if (total > 0) {
+    normalToolbar.classList.add("hidden");
+    selectionToolbar.classList.remove("hidden");
+  } else {
+    normalToolbar.classList.remove("hidden");
+    selectionToolbar.classList.add("hidden");
+  }
+}
+
+function updateSelectAllState() {
+  const selectAll = document.getElementById("selectAllWeapons");
+
+  if (!selectAll) return;
+
+  const checkboxes = document.querySelectorAll(".weapon-checkbox");
+
+  if (checkboxes.length === 0) {
+    selectAll.checked = false;
+    return;
+  }
+
+  selectAll.checked = [...checkboxes].every((checkbox) => checkbox.checked);
+}
+
+function clearWeaponSelection() {
+  selectedWeapons.clear();
+
+  document.querySelectorAll(".weapon-checkbox").forEach((checkbox) => {
+    checkbox.checked = false;
+  });
+
+  const selectAll = document.getElementById("selectAllWeapons");
+  if (selectAll) {
+    selectAll.checked = false;
+  }
+
+  updateSelectionToolbar();
+}
+
+async function deleteSelectedWeapons() {
+  if (selectedWeapons.size === 0) return;
+
+  const confirmed = confirm(
+    `Yakin ingin menghapus ${selectedWeapons.size} weapon yang dipilih?`,
+  );
+
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient
+    .from("weapon_registry")
+    .delete()
+    .in("id", [...selectedWeapons]);
+
+  if (error) {
+    console.error(error);
+    showToast(error.message, "error");
+    return;
+  }
+
+  showToast(`${selectedWeapons.size} weapon berhasil dihapus.`);
+
+  selectedWeapons.clear();
+
+  await loadWeaponRegistryData();
 }

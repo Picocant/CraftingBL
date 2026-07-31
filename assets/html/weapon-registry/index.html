@@ -2,7 +2,23 @@
   <!-- ================= FORM ================= -->
   <div class="lg:col-span-1">
     <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-      <h3 class="mb-5 text-lg font-bold">Registrasi Weapon</h3>
+      <div class="mb-6">
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"
+          >
+            <i data-lucide="shield-plus" class="h-5 w-5 text-red-400"></i>
+          </div>
+
+          <div>
+            <h3 class="text-xl font-bold text-white">Registrasi Weapon</h3>
+
+            <p class="text-sm text-zinc-400">
+              Daftarkan serial weapon baru ke dalam sistem.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div class="space-y-5">
         <div>
@@ -10,14 +26,14 @@
 
           <select
             id="weaponCrafting"
-            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3"
+            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none"
           >
             <option value="">Pilih Weapon</option>
           </select>
         </div>
 
         <div>
-          <label class="mb-2 block text-sm text-zinc-400">
+          <label class="mb-2 block text-sm font-medium text-zinc-300">
             Serial Number
           </label>
 
@@ -25,21 +41,21 @@
             id="weaponSerial"
             type="text"
             placeholder="Masukkan Serial Number"
-            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3"
+            class="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 transition focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none"
           />
         </div>
 
         <div class="flex gap-3">
           <button
             id="btnSaveWeapon"
-            class="flex-1 rounded-xl bg-red-600 py-3 font-semibold hover:bg-red-700"
+            class="flex-1 rounded-xl bg-red-600 py-3 font-semibold shadow-lg shadow-red-600/20 transition hover:-translate-y-0.5 hover:bg-red-500"
           >
             Tambah
           </button>
 
           <button
             id="btnCancelWeapon"
-            class="hidden rounded-xl bg-zinc-700 px-5 py-3 font-semibold hover:bg-zinc-600"
+            class="hidden rounded-xl border border-zinc-700 bg-zinc-800 px-5 py-3 font-semibold transition hover:bg-zinc-700"
           >
             Batal
           </button>
@@ -51,8 +67,40 @@
   <!-- ================= LIST ================= -->
   <div class="lg:col-span-2">
     <!-- Toolbar -->
+    <!-- Toolbar -->
     <div class="mb-6 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-      <div class="space-y-4">
+      <!-- Toolbar Selection -->
+      <div
+        id="weaponSelectionToolbar"
+        class="hidden flex items-center justify-between rounded-lg border border-red-700/40 bg-red-900/20 px-4 py-3"
+      >
+        <div class="flex items-center gap-2">
+          <i data-lucide="check-circle-2" class="w-5 h-5 text-red-400"></i>
+
+          <span class="text-sm text-white">
+            <span id="selectedWeaponCount">0</span> Weapon dipilih
+          </span>
+        </div>
+
+        <div class="flex gap-2">
+          <button
+            id="btnDeleteSelectedWeapon"
+            class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium transition hover:bg-red-500"
+          >
+            Hapus Terpilih
+          </button>
+
+          <button
+            id="btnCancelSelectedWeapon"
+            class="rounded-lg bg-zinc-700 px-4 py-2 text-sm transition hover:bg-zinc-600"
+          >
+            Batal
+          </button>
+        </div>
+      </div>
+
+      <!-- Toolbar Normal -->
+      <div id="weaponNormalToolbar" class="space-y-4">
         <!-- Baris Pertama -->
         <div class="flex items-center justify-between gap-4">
           <input
