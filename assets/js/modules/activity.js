@@ -8,6 +8,8 @@ let activityMembers = [];
 let selectedActivityMembers = [];
 
 let editingActivityId = null;
+
+let selectedActivityImages = [];
 /* =========================================================
    FETCH MEMBERS
 ========================================================= */
@@ -36,24 +38,27 @@ async function fetchActivitiesFromSupabase() {
     .from("activities")
     .select(
       `
-      id,
-      name,
-      activity_date,
-      leader_id,
-      created_at,
-      leader:members!activities_leader_id_fkey (
+    id,
+    name,
+    description,
+    activity_date,
+    leader_id,
+    created_at,
+
+    leader:members!activities_leader_id_fkey (
         id,
         name
-      ),
-      activity_attendances (
+    ),
+
+    activity_attendances (
         id,
         member_id,
         member:members (
-          id,
-          name
+            id,
+            name
         )
-      )
-    `,
+    )
+`,
     )
     .order("activity_date", { ascending: false });
 
@@ -317,6 +322,65 @@ function activityPage() {
         </div>
 
       </div>
+
+        <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mt-6">
+
+            <div class="mb-4">
+                <h3 class="text-lg font-semibold">
+                    Laporan Aktivitas
+                </h3>
+
+                <p class="text-sm text-zinc-500">
+                    Tuliskan kronologi atau alur cerita aktivitas.
+                </p>
+            </div>
+
+            <textarea
+                id="activityDescription"
+                rows="6"
+                placeholder="Ceritakan jalannya aktivitas..."
+                class="w-full rounded-xl bg-zinc-950 border border-zinc-800 px-4 py-3 resize-none outline-none focus:border-red-500"
+            ></textarea>
+
+            <div class="mt-6">
+
+              <label class="
+                  block
+                  text-xs
+                  uppercase
+                  tracking-widest
+                  text-zinc-500
+                  mb-3
+              ">
+                  Dokumentasi Aktivitas
+              </label>
+
+              <input
+                  id="activityImages"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  class="hidden"
+              >
+
+              <button
+                  type="button"
+                  onclick="document.getElementById('activityImages').click()"
+                  class="btn"
+              >
+                  <i data-lucide="image-plus" class="w-4 h-4"></i>
+
+                  Tambah Foto
+              </button>
+
+              <div
+                  id="activityImagesPreview"
+                  class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4"
+              ></div>
+
+          </div>
+
+        </div>
 
 
       <!-- =====================================================
@@ -818,6 +882,22 @@ function setDefaultActivityDate() {
   input.value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
+function previewActivityImage() {
+  const input = document.getElementById("activityImage");
+
+  const preview = document.getElementById("activityPreview");
+
+  const wrapper = document.getElementById("activityImagePreview");
+
+  if (!input.files.length) {
+    wrapper.classList.add("hidden");
+    return;
+  }
+
+  preview.src = URL.createObjectURL(input.files[0]);
+
+  wrapper.classList.remove("hidden");
+}
 /* =========================================================
    SAVE
 ========================================================= */
@@ -834,6 +914,10 @@ async function saveActivity() {
   const activityDate = dateInput?.value || "";
 
   const leaderId = Number(leaderInput?.value) || null;
+
+  const description = document
+    .getElementById("activityDescription")
+    .value.trim();
 
   /* =========================
      VALIDATION
@@ -898,6 +982,7 @@ async function saveActivity() {
       .from("activities")
       .insert({
         name: name,
+        description: description,
         activity_date: activityDate,
         leader_id: leaderId,
       })
@@ -909,14 +994,21 @@ async function saveActivity() {
     if (data) {
       savedActivityId = data.id;
     }
+
+    if (savedActivityId) {
+      const uploadedImages = await uploadActivityImages(savedActivityId);
+      console.log(uploadedImages);
+    }
   } else {
     /* =========================
      UPDATE
   ========================= */
+
     const { error } = await supabaseClient
       .from("activities")
       .update({
         name: name,
+        description: description,
         activity_date: activityDate,
         leader_id: leaderId,
       })
@@ -958,17 +1050,13 @@ async function saveActivity() {
       .from("activity_attendances")
       .delete()
       .eq("activity_id", savedActivityId);
-
     if (deleteAttendanceError) {
       console.error("Gagal menghapus kehadiran lama:", deleteAttendanceError);
-
       alert(
         `Kehadiran gagal diperbarui.\n\n` +
           `${deleteAttendanceError.message || ""}`,
       );
-
       resetActivitySaveButton();
-
       return;
     }
   }
@@ -1021,7 +1109,7 @@ async function saveActivity() {
      SUCCESS
   ========================= */
 
-      const wasEditing = editingActivityId !== null;
+  const wasEditing = editingActivityId !== null;
 
   alert(
     wasEditing
@@ -1345,7 +1433,37 @@ function showActivityDetail(id) {
         border-zinc-800
       "
     >
+      <div class="mb-6">
 
+        <div class="
+            text-xs
+            uppercase
+            tracking-widest
+            text-zinc-500
+            mb-3
+        ">
+            Laporan Aktivitas
+        </div>
+
+        <div class="
+            rounded-xl
+            border
+            border-zinc-800
+            bg-zinc-950
+            p-4
+            text-sm
+            leading-7
+            whitespace-pre-wrap
+            text-zinc-300
+        ">
+            ${
+              activity.description
+                ? escapeActivityHTML(activity.description)
+                : '<span class="text-zinc-600 italic">Belum ada laporan aktivitas.</span>'
+            }
+        </div>
+
+</div>
       <div
         class="
           text-xs
@@ -1539,6 +1657,12 @@ function editActivity(id) {
 
   const leaderInput = document.getElementById("activityLeader");
 
+  const descriptionInput = document.getElementById("activityDescription");
+
+  if (descriptionInput) {
+    descriptionInput.value = activity.description || "";
+  }
+
   if (nameInput) {
     nameInput.value = activity.name || "";
   }
@@ -1599,7 +1723,6 @@ function activityDateToInput(value) {
   return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
-
 /* =========================================================
    DELETE ACTIVITY
 ========================================================= */
@@ -1633,10 +1756,7 @@ async function deleteActivity(id) {
     .eq("activity_id", id);
 
   if (attendanceError) {
-    console.error(
-      "Gagal menghapus kehadiran aktivitas:",
-      attendanceError,
-    );
+    console.error("Gagal menghapus kehadiran aktivitas:", attendanceError);
 
     alert(
       `Gagal menghapus data kehadiran.\n\n` +
@@ -1656,15 +1776,9 @@ async function deleteActivity(id) {
     .eq("id", id);
 
   if (activityError) {
-    console.error(
-      "Gagal menghapus aktivitas:",
-      activityError,
-    );
+    console.error("Gagal menghapus aktivitas:", activityError);
 
-    alert(
-      `Aktivitas gagal dihapus.\n\n` +
-        `${activityError.message || ""}`,
-    );
+    alert(`Aktivitas gagal dihapus.\n\n` + `${activityError.message || ""}`);
 
     return;
   }
@@ -1710,6 +1824,10 @@ async function loadActivities() {
 
   setDefaultActivityDate();
 
+  document
+    .getElementById("activityImage")
+    ?.addEventListener("change", previewActivityImage);
+
   renderActivityMembers();
 
   renderActivityHistory();
@@ -1730,4 +1848,80 @@ function escapeActivityHTML(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function previewActivityImages() {
+  const input = document.getElementById("activityImages");
+  selectedActivityImages = [...input.files];
+  const container = document.getElementById("activityImagesPreview");
+  container.innerHTML = "";
+  selectedActivityImages.forEach((file) => {
+    const url = URL.createObjectURL(file);
+    container.innerHTML += `
+            <div class="relative">
+                <img
+                    src="${url}"
+                    class="
+                        w-full
+                        h-36
+                        object-cover
+                        rounded-xl
+                        border
+                        border-zinc-800
+                    "
+                >
+            </div>
+        `;
+  });
+}
+
+async function uploadActivityImages(activityId) {
+  console.log("========== UPLOAD IMAGE ==========");
+  console.log("Activity ID:", activityId);
+
+  if (selectedActivityImages.length === 0) {
+    console.log("Tidak ada gambar dipilih");
+    return [];
+  }
+
+  console.log("Jumlah gambar:", selectedActivityImages.length);
+  console.log(selectedActivityImages);
+
+  const uploadedImages = [];
+
+  for (const file of selectedActivityImages) {
+    console.log("Uploading:", file.name);
+
+    const extension = file.name.split(".").pop();
+    const fileName = `${activityId}/${crypto.randomUUID()}.${extension}`;
+
+    console.log("Storage Path:", fileName);
+
+    const { data, error } = await supabaseClient.storage
+      .from("activity-images")
+      .upload(fileName, file);
+
+    console.log("UPLOAD RESULT");
+    console.log(data);
+    console.log(error);
+
+    if (error) {
+      console.error(error);
+      continue;
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabaseClient.storage.from("activity-images").getPublicUrl(fileName);
+
+    console.log("PUBLIC URL:");
+    console.log(publicUrl);
+
+    uploadedImages.push(publicUrl);
+  }
+
+  console.log("UPLOAD SELESAI");
+  console.log(uploadedImages);
+
+  return uploadedImages;
 }
