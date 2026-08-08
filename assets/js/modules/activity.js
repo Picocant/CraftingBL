@@ -356,11 +356,12 @@ function activityPage() {
               </label>
 
               <input
-                  id="activityImages"
                   type="file"
-                  multiple
+                  id="activityImages"
                   accept="image/*"
+                  multiple
                   class="hidden"
+                  onchange="previewActivityImages()"
               >
 
               <button
