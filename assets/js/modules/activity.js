@@ -10,6 +10,9 @@ let selectedActivityMembers = [];
 let editingActivityId = null;
 
 let selectedActivityImages = [];
+
+let existingActivityImages = [];
+
 /* =========================================================
    FETCH MEMBERS
 ========================================================= */
@@ -361,7 +364,6 @@ function activityPage() {
                   accept="image/*"
                   multiple
                   class="hidden"
-                  onchange="previewActivityImages()"
               >
 
               <button
@@ -373,15 +375,6 @@ function activityPage() {
 
                   Tambah Foto
               </button>
-
-              <input
-                  id="activityImages"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  hidden
-                  onchange="previewActivityImages()"
-              />
 
               <div
                   id="activityImageInfo"
@@ -899,42 +892,20 @@ function setDefaultActivityDate() {
   input.value = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
-function previewActivityImages() {
-  const input = document.getElementById("activityImage");
-
-  const preview = document.getElementById("activityPreview");
-
-  const wrapper = document.getElementById("activityImagePreview");
-
-  if (!input.files.length) {
-    wrapper.classList.add("hidden");
-    return;
-  }
-
-  preview.src = URL.createObjectURL(input.files[0]);
-
-  wrapper.classList.remove("hidden");
-}
 /* =========================================================
    SAVE
 ========================================================= */
 
 async function saveActivity() {
   const nameInput = document.getElementById("activityName");
-
   const dateInput = document.getElementById("activityDate");
-
   const leaderInput = document.getElementById("activityLeader");
+  const descriptionInput = document.getElementById("activityDescription");
 
   const name = nameInput?.value.trim() || "";
-
   const activityDate = dateInput?.value || "";
-
   const leaderId = Number(leaderInput?.value) || null;
-
-  const description = document
-    .getElementById("activityDescription")
-    .value.trim();
+  const description = descriptionInput?.value.trim() || "";
 
   /* =========================
      VALIDATION
@@ -958,6 +929,7 @@ async function saveActivity() {
     return;
   }
 
+  // Leader otomatis dianggap hadir
   if (!selectedActivityMembers.includes(leaderId)) {
     selectedActivityMembers.push(leaderId);
   }
@@ -972,7 +944,6 @@ async function saveActivity() {
   ========================= */
 
   const button = document.getElementById("saveActivityBtn");
-
   const buttonText = document.getElementById("saveActivityText");
 
   if (button) {
@@ -1006,114 +977,150 @@ async function saveActivity() {
       .select("id")
       .single();
 
+    console.log("CREATE ACTIVITY DATA:", data);
+    console.log("CREATE ACTIVITY ERROR:", error);
+
     activityError = error;
 
     if (data) {
-      savedActivityId = data.id;
+      savedActivityId = Number(data.id);
     }
+  } else {
 
-    if (savedActivityId) {
-      const uploadedImages = await uploadActivityImages(savedActivityId);
-
-      if (uploadedImages.length > 0) {
-        const { error } = await supabaseClient.from("activity_images").insert(
-          uploadedImages.map((url) => ({
-            activity_id: savedActivityId,
-            image_url: url,
-          })),
-        );
-
-        console.log("INSERT IMAGE", error);
-      }
-    } else {
-      /* =========================
+  /* =========================
      UPDATE
   ========================= */
+    const { data, error } = await supabaseClient
+      .from("activities")
+      .update({
+        name: name,
+        description: description,
+        activity_date: activityDate,
+        leader_id: leaderId,
+      })
+      .eq("id", editingActivityId)
+      .select("id")
+      .single();
 
-      const { error } = await supabaseClient
-        .from("activities")
-        .update({
-          name: name,
-          description: description,
-          activity_date: activityDate,
-          leader_id: leaderId,
-        })
-        .eq("id", editingActivityId);
+    console.log("UPDATE ACTIVITY DATA:", data);
+    console.log("UPDATE ACTIVITY ERROR:", error);
 
-      activityError = error;
-      savedActivityId = editingActivityId;
+    activityError = error;
+
+    if (data) {
+      savedActivityId = Number(data.id);
+    } else {
+      savedActivityId = Number(editingActivityId);
     }
+  }
 
-    /* =========================
-     ERROR ACTIVITY
+  /* =========================
+     VALIDATE ACTIVITY ID
   ========================= */
 
-    if (activityError) {
-      console.error(
+  console.log("FINAL SAVED ACTIVITY ID:", savedActivityId);
+
+  if (activityError) {
+    console.error(
+      editingActivityId === null
+        ? "Gagal menyimpan aktivitas:"
+        : "Gagal mengupdate aktivitas:",
+      activityError,
+    );
+
+    alert(
+      `${
         editingActivityId === null
-          ? "Gagal menyimpan aktivitas:"
-          : "Gagal mengupdate aktivitas:",
-        activityError,
-      );
+          ? "Aktivitas gagal disimpan."
+          : "Aktivitas gagal diupdate."
+      }\n\n${activityError.message || ""}`,
+    );
 
-      alert(
-        `${editingActivityId === null ? "Aktivitas gagal disimpan." : "Aktivitas gagal diupdate."}\n\n` +
-          `${activityError.message || ""}`,
-      );
+    resetActivitySaveButton();
+    return;
+  }
 
-      resetActivitySaveButton();
+  if (!savedActivityId) {
+    console.error("Activity ID tidak ditemukan.");
 
-      return;
-    }
+    alert("Aktivitas gagal disimpan karena ID aktivitas tidak ditemukan.");
 
-    /* =========================
+    resetActivitySaveButton();
+    return;
+  }
+
+  /* =========================
+     UPLOAD FOTO BARU
+  ========================= */
+
+  if (
+    typeof selectedActivityImages !== "undefined" &&
+    selectedActivityImages.length > 0
+  ) {
+    console.log("Upload foto untuk activity:", savedActivityId);
+
+    const uploadedImages = await uploadActivityImages(savedActivityId);
+
+    console.log("Uploaded Images:", uploadedImages);
+  }
+
+  /* =========================
      UPDATE ATTENDANCE
   ========================= */
 
-    // Kalau sedang edit, hapus data kehadiran lama terlebih dahulu.
-    if (editingActivityId !== null) {
-      const { error: deleteAttendanceError } = await supabaseClient
-        .from("activity_attendances")
-        .delete()
-        .eq("activity_id", savedActivityId);
-      if (deleteAttendanceError) {
-        console.error("Gagal menghapus kehadiran lama:", deleteAttendanceError);
-        alert(
-          `Kehadiran gagal diperbarui.\n\n` +
-            `${deleteAttendanceError.message || ""}`,
-        );
-        resetActivitySaveButton();
-        return;
-      }
-    }
+  // Kalau sedang edit,
+  // hapus data kehadiran lama terlebih dahulu.
+  if (editingActivityId !== null) {
+    const { error: deleteAttendanceError } = await supabaseClient
+      .from("activity_attendances")
+      .delete()
+      .eq("activity_id", savedActivityId);
 
-    /* =========================
+    if (deleteAttendanceError) {
+      console.error("Gagal menghapus kehadiran lama:", deleteAttendanceError);
+
+      alert(
+        `Kehadiran gagal diperbarui.\n\n${deleteAttendanceError.message || ""}`,
+      );
+
+      resetActivitySaveButton();
+      return;
+    }
+  }
+
+  /* =========================
      INSERT ATTENDANCE
   ========================= */
 
-    const attendanceRows = selectedActivityMembers.map((memberId) => ({
-      activity_id: savedActivityId,
-      member_id: Number(memberId),
-    }));
+  const attendanceRows = selectedActivityMembers.map((memberId) => ({
+    activity_id: savedActivityId,
+    member_id: Number(memberId),
+  }));
 
-    const { error: attendanceError } = await supabaseClient
-      .from("activity_attendances")
-      .insert(attendanceRows);
+  console.log("ATTENDANCE ROWS:", attendanceRows);
 
-    if (attendanceError) {
-      console.error(
-        editingActivityId === null
-          ? "Gagal menyimpan kehadiran:"
-          : "Gagal memperbarui kehadiran:",
-        attendanceError,
-      );
-    }
+  console.log("SAVED ACTIVITY ID:", savedActivityId);
+
+  const { error: attendanceError } = await supabaseClient
+    .from("activity_attendances")
+    .insert(attendanceRows);
+
+  /* =========================
+     ATTENDANCE ERROR
+  ========================= */
+
+  if (attendanceError) {
+    console.error(
+      editingActivityId === null
+        ? "Gagal menyimpan kehadiran:"
+        : "Gagal memperbarui kehadiran:",
+      attendanceError,
+    );
+
     /*
-     Kalau CREATE gagal pada attendance,
-     hapus activity yang baru dibuat.
-
-     Kalau EDIT gagal, activity jangan dihapus.
-    */
+     * Kalau CREATE gagal pada attendance,
+     * hapus activity yang baru dibuat.
+     */
     if (editingActivityId === null) {
       await supabaseClient
         .from("activities")
@@ -1122,12 +1129,14 @@ async function saveActivity() {
     }
 
     alert(
-      `${editingActivityId === null ? "Kehadiran gagal disimpan." : "Kehadiran gagal diperbarui."}\n\n` +
-        `${attendanceError.message || ""}`,
+      `${
+        editingActivityId === null
+          ? "Kehadiran gagal disimpan."
+          : "Kehadiran gagal diperbarui."
+      }\n\n${attendanceError.message || ""}`,
     );
 
     resetActivitySaveButton();
-
     return;
   }
 
@@ -1143,8 +1152,23 @@ async function saveActivity() {
       : "Aktivitas berhasil disimpan.",
   );
 
+  /* =========================
+     RESET STATE
+  ========================= */
+
   editingActivityId = null;
   selectedActivityMembers = [];
+  selectedActivityImages = [];
+
+  /* =========================
+     RESET FORM BUTTON
+  ========================= */
+
+  resetActivitySaveButton();
+
+  /* =========================
+     RELOAD DATA
+  ========================= */
 
   await loadActivities();
 }
@@ -1647,7 +1671,7 @@ function formatActivityDate(value) {
    EDIT ACTIVITY
 ========================================================= */
 
-function editActivity(id) {
+async function editActivity(id) {
   const activity = supabaseActivities.find(
     (item) => Number(item.id) === Number(id),
   );
@@ -1672,6 +1696,32 @@ function editActivity(id) {
   if (leaderId && !selectedActivityMembers.includes(leaderId)) {
     selectedActivityMembers.push(leaderId);
   }
+
+  /* =========================
+     LOAD EXISTING IMAGES
+  ========================= */
+
+  const { data: imageData, error: imageError } = await supabaseClient
+    .from("activity_images")
+    .select("id, image_url")
+    .eq("activity_id", activity.id)
+    .order("created_at", { ascending: true });
+
+  console.log("EXISTING ACTIVITY IMAGES:", imageData);
+  console.log("EXISTING IMAGE ERROR:", imageError);
+
+  if (imageError) {
+    console.error("Gagal mengambil foto aktivitas:", imageError);
+
+    existingActivityImages = [];
+
+    alert(`Foto aktivitas gagal dimuat.\n\n${imageError.message || ""}`);
+  } else {
+    existingActivityImages = (imageData || []).map((image) => image.image_url);
+  }
+
+  // Foto baru dikosongkan ketika mulai edit
+  selectedActivityImages = [];
 
   /* =========================
      FORM
@@ -1700,6 +1750,12 @@ function editActivity(id) {
   if (leaderInput) {
     leaderInput.value = String(activity.leader_id);
   }
+
+  /* =========================
+     IMAGE PREVIEW
+  ========================= */
+
+  renderActivityImages();
 
   /* =========================
      BUTTON
@@ -1851,7 +1907,7 @@ async function loadActivities() {
   setDefaultActivityDate();
 
   document
-    .getElementById("activityImage")
+    .getElementById("activityImages")
     ?.addEventListener("change", previewActivityImages);
 
   renderActivityMembers();
@@ -1879,19 +1935,65 @@ function escapeActivityHTML(value) {
 function previewActivityImages() {
   const input = document.getElementById("activityImages");
 
-  selectedActivityImages = [...input.files];
-
   const container = document.getElementById("activityImagePreview");
   const info = document.getElementById("activityImageInfo");
 
+  if (!input || !container || !info) {
+    return;
+  }
+
+  // Foto baru yang dipilih dari komputer
+  selectedActivityImages = [...input.files];
+
+  // Render ulang preview
+  renderActivityImages();
+}
+
+function renderActivityImages() {
+  const container = document.getElementById("activityImagePreview");
+  const info = document.getElementById("activityImageInfo");
+
+  if (!container || !info) {
+    return;
+  }
+
   container.innerHTML = "";
 
-  if (selectedActivityImages.length === 0) {
+  const totalImages =
+    existingActivityImages.length + selectedActivityImages.length;
+
+  if (totalImages === 0) {
     info.textContent = "Belum ada foto dipilih.";
     return;
   }
 
-  info.textContent = `${selectedActivityImages.length} foto dipilih.`;
+  info.textContent = `${totalImages} foto.`;
+
+  // =========================
+  // FOTO LAMA DARI DATABASE
+  // =========================
+
+  existingActivityImages.forEach((url) => {
+    container.innerHTML += `
+      <div class="relative">
+        <img
+          src="${url}"
+          class="w-full h-36 object-cover rounded-xl border border-zinc-800"
+          alt="Dokumentasi aktivitas"
+        >
+
+        <span
+          class="absolute top-2 left-2 px-2 py-1 text-xs rounded-lg bg-black/70 text-white"
+        >
+          Tersimpan
+        </span>
+      </div>
+    `;
+  });
+
+  // =========================
+  // FOTO BARU
+  // =========================
 
   selectedActivityImages.forEach((file) => {
     const url = URL.createObjectURL(file);
@@ -1901,7 +2003,14 @@ function previewActivityImages() {
         <img
           src="${url}"
           class="w-full h-36 object-cover rounded-xl border border-zinc-800"
+          alt="${file.name}"
         >
+
+        <span
+          class="absolute top-2 left-2 px-2 py-1 text-xs rounded-lg bg-red-600/80 text-white"
+        >
+          Baru
+        </span>
       </div>
     `;
   });
@@ -1924,36 +2033,77 @@ async function uploadActivityImages(activityId) {
   for (const file of selectedActivityImages) {
     console.log("Uploading:", file.name);
 
+    // =========================
+    // 1. BUAT PATH STORAGE
+    // =========================
     const extension = file.name.split(".").pop();
     const fileName = `${activityId}/${crypto.randomUUID()}.${extension}`;
 
     console.log("Storage Path:", fileName);
 
-    const { data, error } = await supabaseClient.storage
-      .from("activity-images")
-      .upload(fileName, file);
+    // =========================
+    // 2. UPLOAD KE STORAGE
+    // =========================
+    const { data: uploadData, error: uploadError } =
+      await supabaseClient.storage
+        .from("activity-images")
+        .upload(fileName, file);
 
     console.log("UPLOAD RESULT");
-    console.log(data);
-    console.log(error);
+    console.log(uploadData);
+    console.log(uploadError);
 
-    if (error) {
-      console.error(error);
+    if (uploadError) {
+      console.error("UPLOAD ERROR:", uploadError);
       continue;
     }
 
-    const {
-      data: { publicUrl },
-    } = supabaseClient.storage.from("activity-images").getPublicUrl(fileName);
+    // =========================
+    // 3. AMBIL PUBLIC URL
+    // =========================
+    const { data: publicData } = supabaseClient.storage
+      .from("activity-images")
+      .getPublicUrl(fileName);
+
+    const publicUrl = publicData.publicUrl;
 
     console.log("PUBLIC URL:");
     console.log(publicUrl);
 
+    // =========================
+    // 4. SIMPAN URL KE DATABASE
+    // =========================
+    const { data: imageData, error: imageError } = await supabaseClient
+      .from("activity_images")
+      .insert({
+        activity_id: activityId,
+        image_url: publicUrl,
+      })
+      .select();
+
+    console.log("DATABASE INSERT RESULT:");
+    console.log(imageData);
+    console.log(imageError);
+
+    if (imageError) {
+      console.error("DATABASE INSERT ERROR:", imageError);
+
+      // Kalau database gagal, hapus file dari Storage
+      await supabaseClient.storage.from("activity-images").remove([fileName]);
+
+      continue;
+    }
+
+    // =========================
+    // 5. MASUKKAN KE ARRAY
+    // =========================
     uploadedImages.push(publicUrl);
+
+    console.log("IMAGE BERHASIL DISIMPAN:", publicUrl);
   }
 
-  console.log("UPLOAD SELESAI");
-  console.log(uploadedImages);
+  console.log("========== UPLOAD SELESAI ==========");
+  console.log("Uploaded Images:", uploadedImages);
 
   return uploadedImages;
 }
