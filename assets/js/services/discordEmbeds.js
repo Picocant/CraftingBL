@@ -198,3 +198,175 @@ function buildInventoryEmbed(transaction) {
     ],
   };
 }
+
+/* =========================================================
+   ACTIVITY DISCORD EMBED
+========================================================= */
+
+/* =========================================================
+ACTIVITY DISCORD EMBED
+========================================================= */
+
+function buildActivityEmbed(activity, images = []) {
+  const attendances = activity.activity_attendances || [];
+
+  const leaderId = Number(activity.leader_id);
+
+  /* =======================================================
+  LEADER
+  ======================================================= */
+
+  const leaderAttendance = attendances.find(
+    (attendance) => Number(attendance.member_id) === leaderId,
+  );
+
+  const leaderName =
+    leaderAttendance?.member?.name ||
+    activity.leader?.name ||
+    "Tidak diketahui";
+
+  /* =======================================================
+  TANGGAL & JAM
+  ======================================================= */
+
+  let formattedDate = "-";
+
+  if (activity.activity_date) {
+    const date = new Date(activity.activity_date);
+
+    if (!Number.isNaN(date.getTime())) {
+      formattedDate = new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(date);
+    }
+  }
+
+  /* =======================================================
+  ANGGOTA HADIR
+  ======================================================= */
+
+  let members = "Tidak ada data kehadiran.";
+
+  if (attendances.length > 0) {
+    members = attendances
+      .map((attendance) => {
+        const memberName = attendance.member?.name || "Unknown Member";
+
+        const isLeader = Number(attendance.member_id) === leaderId;
+
+        return isLeader ? `👑 **${memberName}** — Leader` : `• ${memberName}`;
+      })
+      .join("\n");
+  }
+
+  /* =======================================================
+  CERITA AKTIVITAS
+  ======================================================= */
+
+  const description =
+    activity.description?.trim() || "Belum ada laporan aktivitas.";
+
+  /* =======================================================
+  JUMLAH FOTO
+  ======================================================= */
+
+  const imageCount = Array.isArray(images) ? images.length : 0;
+
+  /* =======================================================
+  EMBED UTAMA
+  ======================================================= */
+
+  const mainEmbed = {
+    title: "📋 BLACK LINE Activity System",
+
+    description: "```ACTIVITY REPORT```",
+
+    color: 0xdc2626,
+
+    fields: [
+      {
+        name: "📋 Nama Aktivitas",
+        value: `**${activity.name || "-"}**`,
+        inline: false,
+      },
+
+      {
+        name: "📅 Tanggal & Jam",
+        value: formattedDate,
+        inline: true,
+      },
+
+      {
+        name: "👑 Leader",
+        value: `**${leaderName}**`,
+        inline: true,
+      },
+
+      {
+        name: "📝 Cerita Aktivitas",
+        value: description.substring(0, 1024),
+        inline: false,
+      },
+
+      {
+        name: `👥 Anggota Hadir (${attendances.length})`,
+        value: members.substring(0, 1024),
+        inline: false,
+      },
+
+      {
+        name: "📸 Dokumentasi",
+        value:
+          imageCount > 0
+            ? `**${imageCount} foto**`
+            : "Tidak ada foto dokumentasi.",
+        inline: false,
+      },
+    ],
+
+    footer: {
+      text: "BLACK LINE Activity System",
+    },
+
+    timestamp: new Date().toISOString(),
+  };
+
+  /* =======================================================
+  FOTO DOKUMENTASI
+  ======================================================= */
+
+  const imageEmbeds = Array.isArray(images)
+    ? images
+        .filter((image) => image?.image_url)
+        .map((image, index) => {
+          return {
+            title: `📸 Dokumentasi ${index + 1}`,
+
+            color: 0xdc2626,
+
+            image: {
+              url: image.image_url,
+            },
+
+            footer: {
+              text: "BLACK LINE Activity System",
+            },
+          };
+        })
+    : [];
+
+  /* =======================================================
+  RETURN DISCORD PAYLOAD
+  ======================================================= */
+
+  return {
+    embeds: [mainEmbed, ...imageEmbeds],
+  };
+}

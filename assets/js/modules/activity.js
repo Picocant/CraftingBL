@@ -986,8 +986,7 @@ async function saveActivity() {
       savedActivityId = Number(data.id);
     }
   } else {
-
-  /* =========================
+    /* =========================
      UPDATE
   ========================= */
     const { data, error } = await supabaseClient
@@ -1447,7 +1446,7 @@ function renderActivityHistory() {
    ACTIVITY DETAIL
 ========================================================= */
 
-function showActivityDetail(id) {
+async function showActivityDetail(id) {
   const activity = supabaseActivities.find(
     (item) => Number(item.id) === Number(id),
   );
@@ -1460,6 +1459,10 @@ function showActivityDetail(id) {
   const container = document.getElementById(`activityDetail-${activity.id}`);
 
   if (!container) {
+    console.error(
+      "Container detail tidak ditemukan:",
+      `activityDetail-${activity.id}`,
+    );
     return;
   }
 
@@ -1470,9 +1473,66 @@ function showActivityDetail(id) {
     return;
   }
 
+  /* =========================================================
+     DATA ACTIVITY
+  ========================================================= */
+
   const attendances = activity.activity_attendances || [];
 
   const leaderId = Number(activity.leader_id);
+
+  const leaderAttendance = attendances.find(
+    (attendance) => Number(attendance.member_id) === leaderId,
+  );
+
+  const leaderName =
+    leaderAttendance?.member?.name || activity.leader?.name || "Unknown Leader";
+
+  /* =========================================================
+     AMBIL FOTO ACTIVITY
+  ========================================================= */
+
+  let activityImages = [];
+  let imageError = null;
+
+  const { data: imageData, error: imageFetchError } = await supabaseClient
+    .from("activity_images")
+    .select("id, activity_id, image_url, created_at")
+    .eq("activity_id", activity.id)
+    .order("created_at", {
+      ascending: true,
+    });
+
+  activityImages = imageData || [];
+  imageError = imageFetchError;
+
+  console.log("DETAIL ACTIVITY IMAGES:", activityImages);
+
+  console.log("DETAIL IMAGE ERROR:", imageError);
+
+  /* =========================================================
+     FORMAT TANGGAL
+  ========================================================= */
+
+  let formattedDate = "-";
+
+  if (activity.activity_date) {
+    const date = new Date(activity.activity_date);
+
+    if (!Number.isNaN(date.getTime())) {
+      formattedDate = date.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+  }
+
+  /* =========================================================
+     RENDER DETAIL
+  ========================================================= */
 
   container.innerHTML = `
     <div
@@ -1481,21 +1541,254 @@ function showActivityDetail(id) {
         pt-5
         border-t
         border-zinc-800
+        space-y-6
       "
     >
-      <div class="mb-6">
 
-        <div class="
+      <div class="flex justify-end mb-5">
+        <button
+          type="button"
+          onclick="sendActivityToDiscord(${activity.id})"
+          class="
+            inline-flex
+            items-center
+            gap-2
+            px-4
+            py-2
+            rounded-lg
+            bg-[#5865F2]
+            hover:bg-[#4752C4]
+            text-white
+            text-sm
+            font-medium
+            transition
+          "
+        >
+          <i
+            data-lucide="send"
+            class="w-4 h-4"
+          ></i>
+
+          Kirim ke Discord
+        </button>
+      </div>
+
+    <div class="flex items-center justify-between gap-3 mb-6">
+
+        <div>
+          <div class="text-xs uppercase tracking-widest text-zinc-500">
+            Detail Aktivitas
+          </div>
+
+          <div class="text-sm text-zinc-500 mt-1">
+            Informasi lengkap aktivitas
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onclick="exportActivityToWord(${activity.id})"
+          class="
+            inline-flex
+            items-center
+            gap-2
+            px-4
+            py-2.5
+            rounded-xl
+            bg-red-600
+            hover:bg-red-500
+            text-white
+            text-sm
+            font-semibold
+            transition
+          "
+        >
+          <i
+            data-lucide="file-text"
+            class="w-4 h-4"
+          ></i>
+
+          Export Word
+        </button>
+
+      </div>
+
+      <!-- =================================================
+           INFORMASI AKTIVITAS
+      ================================================== -->
+
+      <div>
+
+        <div
+          class="
             text-xs
             uppercase
             tracking-widest
             text-zinc-500
             mb-3
-        ">
-            Laporan Aktivitas
+          "
+        >
+          Informasi Aktivitas
         </div>
 
-        <div class="
+        <div
+          class="
+            grid
+            sm:grid-cols-2
+            xl:grid-cols-3
+            gap-3
+          "
+        >
+
+          <!-- NAMA -->
+
+          <div
+            class="
+              rounded-xl
+              border
+              border-zinc-800
+              bg-zinc-950
+              p-4
+            "
+          >
+
+            <div
+              class="
+                text-[10px]
+                uppercase
+                tracking-widest
+                text-zinc-500
+                mb-2
+              "
+            >
+              Nama Aktivitas
+            </div>
+
+            <div
+              class="
+                text-sm
+                font-semibold
+                text-white
+              "
+            >
+              ${escapeActivityHTML(activity.name || "-")}
+            </div>
+
+          </div>
+
+
+          <!-- TANGGAL -->
+
+          <div
+            class="
+              rounded-xl
+              border
+              border-zinc-800
+              bg-zinc-950
+              p-4
+            "
+          >
+
+            <div
+              class="
+                text-[10px]
+                uppercase
+                tracking-widest
+                text-zinc-500
+                mb-2
+              "
+            >
+              Tanggal & Jam
+            </div>
+
+            <div
+              class="
+                text-sm
+                font-semibold
+                text-white
+              "
+            >
+              ${escapeActivityHTML(formattedDate)}
+            </div>
+
+          </div>
+
+
+          <!-- LEADER -->
+
+          <div
+            class="
+              rounded-xl
+              border
+              border-zinc-800
+              bg-zinc-950
+              p-4
+            "
+          >
+
+            <div
+              class="
+                text-[10px]
+                uppercase
+                tracking-widest
+                text-zinc-500
+                mb-2
+              "
+            >
+              Leader Aktivitas
+            </div>
+
+            <div
+              class="
+                flex
+                items-center
+                gap-2
+                text-sm
+                font-semibold
+                text-white
+              "
+            >
+
+              <i
+                data-lucide="crown"
+                class="
+                  w-4
+                  h-4
+                  text-yellow-400
+                "
+              ></i>
+
+              ${escapeActivityHTML(leaderName)}
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================================
+           LAPORAN
+      ================================================== -->
+
+      <div>
+
+        <div
+          class="
+            text-xs
+            uppercase
+            tracking-widest
+            text-zinc-500
+            mb-3
+          "
+        >
+          Laporan Aktivitas
+        </div>
+
+        <div
+          class="
             rounded-xl
             border
             border-zinc-800
@@ -1505,134 +1798,364 @@ function showActivityDetail(id) {
             leading-7
             whitespace-pre-wrap
             text-zinc-300
-        ">
-            ${
-              activity.description
-                ? escapeActivityHTML(activity.description)
-                : '<span class="text-zinc-600 italic">Belum ada laporan aktivitas.</span>'
-            }
+          "
+        >
+          ${
+            activity.description
+              ? escapeActivityHTML(activity.description)
+              : `
+                <span
+                  class="
+                    text-zinc-600
+                    italic
+                  "
+                >
+                  Belum ada laporan aktivitas.
+                </span>
+              `
+          }
         </div>
 
-</div>
-      <div
-        class="
-          text-xs
-          uppercase
-          tracking-widest
-          text-zinc-500
-          mb-3
-        "
-      >
-        Anggota Hadir
       </div>
 
-      ${
-        attendances.length === 0
-          ? `
-            <div class="text-sm text-zinc-600">
-              Tidak ada data kehadiran.
-            </div>
-          `
-          : `
+
+      <!-- =================================================
+           DOKUMENTASI
+      ================================================== -->
+
+      <div>
+
+        <div
+          class="
+            flex
+            items-center
+            justify-between
+            gap-3
+            mb-3
+          "
+        >
+
+          <div
+            class="
+              text-xs
+              uppercase
+              tracking-widest
+              text-zinc-500
+            "
+          >
+            Dokumentasi Aktivitas
+          </div>
+
+          <div
+            class="
+              text-xs
+              text-zinc-500
+            "
+          >
+            ${activityImages.length} foto
+          </div>
+
+        </div>
+
+
+        ${
+          imageError
+            ? `
+              <div
+                class="
+                  rounded-xl
+                  border
+                  border-red-900
+                  bg-red-950/20
+                  p-4
+                  text-sm
+                  text-red-400
+                "
+              >
+                Gagal mengambil dokumentasi aktivitas.
+              </div>
+            `
+            : activityImages.length === 0
+              ? `
+                <div
+                  class="
+                    rounded-xl
+                    border
+                    border-zinc-800
+                    bg-zinc-950
+                    p-6
+                    text-center
+                    text-sm
+                    text-zinc-600
+                  "
+                >
+                  Belum ada foto dokumentasi.
+                </div>
+              `
+              : `
+                <div
+                  class="
+                    grid
+                    grid-cols-2
+                    md:grid-cols-3
+                    xl:grid-cols-4
+                    gap-3
+                  "
+                >
+
+                  ${activityImages
+                    .map(
+                      (image) => `
+                        <div
+                          class="
+                            group
+                            relative
+                            overflow-hidden
+                            rounded-xl
+                            border
+                            border-zinc-800
+                            bg-zinc-950
+                          "
+                        >
+
+                          <img
+                            src="${escapeActivityHTML(image.image_url)}"
+                            alt="Dokumentasi aktivitas"
+                            class="
+                              w-full
+                              h-48
+                              object-cover
+                              transition
+                              duration-300
+                              group-hover:scale-105
+                            "
+                            loading="lazy"
+                          >
+
+                          <div
+                            class="
+                              absolute
+                              inset-x-0
+                              bottom-0
+                              p-2
+                              bg-gradient-to-t
+                              from-black/80
+                              to-transparent
+                              opacity-0
+                              group-hover:opacity-100
+                              transition
+                            "
+                          >
+                            <div
+                              class="
+                                text-[10px]
+                                text-zinc-300
+                              "
+                            >
+                              Dokumentasi
+                            </div>
+                          </div>
+
+                        </div>
+                      `,
+                    )
+                    .join("")}
+
+                </div>
+              `
+        }
+
+      </div>
+
+
+      <!-- =================================================
+           KEHADIRAN
+      ================================================== -->
+
+      <div>
+
+        <div
+          class="
+            flex
+            items-center
+            justify-between
+            gap-3
+            mb-3
+          "
+        >
+
+          <div>
+
             <div
               class="
-                grid
-                sm:grid-cols-2
-                xl:grid-cols-3
-                gap-2
+                text-xs
+                uppercase
+                tracking-widest
+                text-zinc-500
               "
             >
+              Anggota Hadir
+            </div>
 
-              ${attendances
-                .map((attendance) => {
-                  const member = attendance.member;
+            <div
+              class="
+                text-xs
+                text-zinc-600
+                mt-1
+              "
+            >
+              Daftar anggota yang mengikuti aktivitas.
+            </div>
 
-                  const isLeader = Number(attendance.member_id) === leaderId;
+          </div>
 
-                  return `
-                    <div
-                      class="
-                        flex
-                        items-center
-                        justify-between
-                        gap-3
-                        px-3
-                        py-3
-                        rounded-lg
-                        bg-zinc-950
-                        border
-                        border-zinc-800
-                      "
-                    >
 
+          <div
+            class="
+              shrink-0
+              rounded-lg
+              bg-green-500/10
+              border
+              border-green-500/20
+              px-3
+              py-2
+              text-xs
+              font-semibold
+              text-green-400
+            "
+          >
+            ${attendances.length} Hadir
+          </div>
+
+        </div>
+
+
+        ${
+          attendances.length === 0
+            ? `
+              <div
+                class="
+                  rounded-xl
+                  border
+                  border-zinc-800
+                  bg-zinc-950
+                  p-6
+                  text-center
+                  text-sm
+                  text-zinc-600
+                "
+              >
+                Tidak ada data kehadiran.
+              </div>
+            `
+            : `
+              <div
+                class="
+                  grid
+                  sm:grid-cols-2
+                  xl:grid-cols-3
+                  gap-2
+                "
+              >
+
+                ${attendances
+                  .map((attendance) => {
+                    const member = attendance.member;
+
+                    const isLeader = Number(attendance.member_id) === leaderId;
+
+                    return `
                       <div
                         class="
                           flex
                           items-center
-                          gap-2
-                          min-w-0
+                          justify-between
+                          gap-3
+                          px-3
+                          py-3
+                          rounded-lg
+                          bg-zinc-950
+                          border
+                          border-zinc-800
                         "
                       >
 
-                        <i
-                          data-lucide="user-check"
+                        <div
                           class="
-                            w-4 h-4
-                            text-green-400
-                            shrink-0
-                          "
-                        ></i>
-
-                        <span
-                          class="
-                            text-sm
-                            truncate
+                            flex
+                            items-center
+                            gap-2
+                            min-w-0
                           "
                         >
-                          ${escapeActivityHTML(
-                            member?.name || "Unknown Member",
-                          )}
-                        </span>
+
+                          <i
+                            data-lucide="user-check"
+                            class="
+                              w-4
+                              h-4
+                              text-green-400
+                              shrink-0
+                            "
+                          ></i>
+
+                          <span
+                            class="
+                              text-sm
+                              truncate
+                            "
+                          >
+                            ${escapeActivityHTML(
+                              member?.name || "Unknown Member",
+                            )}
+                          </span>
+
+                        </div>
+
+
+                        ${
+                          isLeader
+                            ? `
+                              <span
+                                class="
+                                  flex
+                                  items-center
+                                  gap-1
+                                  text-[10px]
+                                  text-yellow-400
+                                  shrink-0
+                                "
+                              >
+
+                                <i
+                                  data-lucide="crown"
+                                  class="w-3 h-3"
+                                ></i>
+
+                                Leader
+
+                              </span>
+                            `
+                            : ""
+                        }
 
                       </div>
+                    `;
+                  })
+                  .join("")}
 
-                      ${
-                        isLeader
-                          ? `
-                            <span
-                              class="
-                                flex
-                                items-center
-                                gap-1
-                                text-[10px]
-                                text-yellow-400
-                                shrink-0
-                              "
-                            >
+              </div>
+            `
+        }
 
-                              <i
-                                data-lucide="crown"
-                                class="w-3 h-3"
-                              ></i>
-
-                              Leader
-
-                            </span>
-                          `
-                          : ""
-                      }
-
-                    </div>
-                  `;
-                })
-                .join("")}
-
-            </div>
-          `
-      }
+      </div>
 
     </div>
   `;
+
+  /* =========================================================
+     TAMPILKAN
+  ========================================================= */
 
   container.classList.remove("hidden");
 
@@ -1717,7 +2240,10 @@ async function editActivity(id) {
 
     alert(`Foto aktivitas gagal dimuat.\n\n${imageError.message || ""}`);
   } else {
-    existingActivityImages = (imageData || []).map((image) => image.image_url);
+    existingActivityImages = (imageData || []).map((image) => ({
+      id: image.id,
+      image_url: image.image_url,
+    }));
   }
 
   // Foto baru dikosongkan ketika mulai edit
@@ -1951,6 +2477,7 @@ function previewActivityImages() {
 
 function renderActivityImages() {
   const container = document.getElementById("activityImagePreview");
+
   const info = document.getElementById("activityImageInfo");
 
   if (!container || !info) {
@@ -1969,51 +2496,243 @@ function renderActivityImages() {
 
   info.textContent = `${totalImages} foto.`;
 
-  // =========================
-  // FOTO LAMA DARI DATABASE
-  // =========================
+  /* =========================
+     FOTO LAMA
+  ========================= */
 
-  existingActivityImages.forEach((url) => {
+  existingActivityImages.forEach((image) => {
     container.innerHTML += `
-      <div class="relative">
+      <div
+        class="relative group"
+      >
+
         <img
-          src="${url}"
-          class="w-full h-36 object-cover rounded-xl border border-zinc-800"
+          src="${image.image_url}"
+          class="
+            w-full
+            h-36
+            object-cover
+            rounded-xl
+            border
+            border-zinc-800
+          "
           alt="Dokumentasi aktivitas"
         >
 
+        <!-- LABEL TERSIMPAN -->
+
         <span
-          class="absolute top-2 left-2 px-2 py-1 text-xs rounded-lg bg-black/70 text-white"
+          class="
+            absolute
+            top-2
+            left-2
+            px-2
+            py-1
+            text-xs
+            rounded-lg
+            bg-black/70
+            text-white
+          "
         >
           Tersimpan
         </span>
+
+        <!-- TOMBOL HAPUS -->
+
+        <button
+          type="button"
+          onclick="deleteActivityImage(${image.id})"
+          class="
+            absolute
+            top-2
+            right-2
+            w-8
+            h-8
+            flex
+            items-center
+            justify-center
+            rounded-lg
+            bg-red-600
+            hover:bg-red-500
+            text-white
+            transition
+          "
+          title="Hapus foto"
+        >
+          <i
+            data-lucide="trash-2"
+            class="w-4 h-4"
+          ></i>
+        </button>
+
       </div>
     `;
   });
 
-  // =========================
-  // FOTO BARU
-  // =========================
+  /* =========================
+     FOTO BARU
+  ========================= */
 
-  selectedActivityImages.forEach((file) => {
+  selectedActivityImages.forEach((file, index) => {
     const url = URL.createObjectURL(file);
 
     container.innerHTML += `
-      <div class="relative">
-        <img
-          src="${url}"
-          class="w-full h-36 object-cover rounded-xl border border-zinc-800"
-          alt="${file.name}"
+        <div
+          class="relative group"
         >
 
-        <span
-          class="absolute top-2 left-2 px-2 py-1 text-xs rounded-lg bg-red-600/80 text-white"
-        >
-          Baru
-        </span>
-      </div>
-    `;
+          <img
+            src="${url}"
+            class="
+              w-full
+              h-36
+              object-cover
+              rounded-xl
+              border
+              border-red-500/50
+            "
+            alt="${file.name}"
+          >
+
+          <!-- LABEL BARU -->
+
+          <span
+            class="
+              absolute
+              top-2
+              left-2
+              px-2
+              py-1
+              text-xs
+              rounded-lg
+              bg-red-600/80
+              text-white
+            "
+          >
+            Baru
+          </span>
+
+        </div>
+      `;
   });
+
+  /* =========================
+     ICON
+  ========================= */
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
+}
+
+async function deleteActivityImage(imageId) {
+  console.log("========== DELETE ACTIVITY IMAGE ==========");
+  console.log("Image ID:", imageId);
+
+  const image = existingActivityImages.find(
+    (item) => Number(item.id) === Number(imageId),
+  );
+
+  if (!image) {
+    console.error("Foto tidak ditemukan:", imageId);
+    alert("Foto tidak ditemukan.");
+    return;
+  }
+
+  const confirmed = confirm(
+    "Apakah kamu yakin ingin menghapus foto ini?\n\nFoto akan dihapus secara permanen.",
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  /* =========================
+     1. AMBIL STORAGE PATH
+  ========================= */
+
+  let storagePath = null;
+
+  try {
+    const url = new URL(image.image_url);
+
+    const marker = "/storage/v1/object/public/activity-images/";
+
+    const index = url.pathname.indexOf(marker);
+
+    if (index !== -1) {
+      storagePath = decodeURIComponent(
+        url.pathname.substring(index + marker.length),
+      );
+    }
+  } catch (error) {
+    console.error("Gagal membaca URL foto:", error);
+  }
+
+  console.log("Storage Path:", storagePath);
+
+  /* =========================
+     2. HAPUS DATABASE
+  ========================= */
+
+  const { error: databaseError } = await supabaseClient
+    .from("activity_images")
+    .delete()
+    .eq("id", imageId);
+
+  console.log("DATABASE DELETE ERROR:", databaseError);
+
+  if (databaseError) {
+    console.error("Gagal menghapus foto dari database:", databaseError);
+
+    alert(
+      `Foto gagal dihapus dari database.\n\n${databaseError.message || ""}`,
+    );
+
+    return;
+  }
+
+  /* =========================
+     3. HAPUS STORAGE
+  ========================= */
+
+  if (storagePath) {
+    const { data: storageData, error: storageError } =
+      await supabaseClient.storage
+        .from("activity-images")
+        .remove([storagePath]);
+
+    console.log("STORAGE DELETE RESULT:", storageData);
+
+    console.log("STORAGE DELETE ERROR:", storageError);
+
+    if (storageError) {
+      console.error(
+        "Database berhasil dihapus, tetapi file Storage gagal dihapus:",
+        storageError,
+      );
+
+      alert(
+        "Data foto berhasil dihapus, tetapi file fisik di Storage gagal dihapus.",
+      );
+    }
+  }
+
+  /* =========================
+     4. HAPUS DARI ARRAY
+  ========================= */
+
+  existingActivityImages = existingActivityImages.filter(
+    (item) => Number(item.id) !== Number(imageId),
+  );
+
+  /* =========================
+     5. RENDER ULANG
+  ========================= */
+
+  renderActivityImages();
+
+  console.log("FOTO BERHASIL DIHAPUS:", imageId);
 }
 
 async function uploadActivityImages(activityId) {
@@ -2106,4 +2825,554 @@ async function uploadActivityImages(activityId) {
   console.log("Uploaded Images:", uploadedImages);
 
   return uploadedImages;
+}
+
+/* =========================================================
+ * EXPORT ACTIVITY TO WORD
+ * ========================================================= */
+
+async function exportActivityToWord(activityId) {
+  try {
+    console.log("=================================");
+    console.log("EXPORT ACTIVITY TO WORD");
+    console.log("Activity ID:", activityId);
+    console.log("=================================");
+
+    if (typeof docx === "undefined") {
+      alert("Library Word belum tersedia.");
+      return;
+    }
+
+    const activity = supabaseActivities.find(
+      (item) => Number(item.id) === Number(activityId),
+    );
+
+    if (!activity) {
+      alert("Aktivitas tidak ditemukan.");
+      return;
+    }
+
+    /* =====================================================
+     * LOADING
+     * ===================================================== */
+
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        title: "Membuat Word...",
+        text: "Sedang mengambil data dan foto aktivitas.",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+    }
+
+    /* =====================================================
+     * DATA AKTIVITAS
+     * ===================================================== */
+
+    const activityName = activity.name || "Tanpa Nama Aktivitas";
+
+    const activityDescription =
+      activity.description || "Belum ada laporan aktivitas.";
+
+    const leaderId = Number(activity.leader_id);
+
+    /* =====================================================
+     * TANGGAL & JAM
+     * ===================================================== */
+
+    const activityDate = new Date(activity.activity_date);
+
+    const formattedDate = activityDate.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+
+    const formattedTime = activityDate.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+
+    /* =====================================================
+     * LEADER
+     * ===================================================== */
+
+    let leaderName = "Tidak diketahui";
+
+    const leaderAttendance = (activity.activity_attendances || []).find(
+      (attendance) => Number(attendance.member_id) === leaderId,
+    );
+
+    if (leaderAttendance?.member?.name) {
+      leaderName = leaderAttendance.member.name;
+    } else if (activity.leader?.name) {
+      leaderName = activity.leader.name;
+    }
+
+    /* =====================================================
+     * ANGGOTA HADIR
+     * ===================================================== */
+
+    const attendances = activity.activity_attendances || [];
+
+    /* =====================================================
+     * AMBIL FOTO DARI DATABASE
+     * ===================================================== */
+
+    const { data: imageData, error: imageError } = await supabaseClient
+      .from("activity_images")
+      .select("id, image_url")
+      .eq("activity_id", activity.id)
+      .order("created_at", {
+        ascending: true,
+      });
+
+    if (imageError) {
+      console.error("Gagal mengambil foto untuk Word:", imageError);
+    }
+
+    const activityImages = imageData || [];
+
+    console.log("FOTO UNTUK EXPORT:", activityImages);
+
+    /* =====================================================
+     * WORD DOCUMENT
+     * ===================================================== */
+
+    const children = [];
+
+    /* =====================================================
+     * HEADER
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        text: "BLACK LINE",
+        heading: docx.HeadingLevel.TITLE,
+        alignment: docx.AlignmentType.CENTER,
+      }),
+    );
+
+    children.push(
+      new docx.Paragraph({
+        text: "LAPORAN AKTIVITAS",
+        heading: docx.HeadingLevel.HEADING_1,
+        alignment: docx.AlignmentType.CENTER,
+      }),
+    );
+
+    children.push(
+      new docx.Paragraph({
+        text: "",
+      }),
+    );
+
+    /* =====================================================
+     * JUDUL
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        children: [
+          new docx.TextRun({
+            text: activityName,
+            bold: true,
+            size: 30,
+          }),
+        ],
+        alignment: docx.AlignmentType.CENTER,
+        spacing: {
+          after: 300,
+        },
+      }),
+    );
+
+    /* =====================================================
+     * INFORMASI
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        children: [
+          new docx.TextRun({
+            text: "Tanggal : ",
+            bold: true,
+          }),
+          new docx.TextRun({
+            text: formattedDate,
+          }),
+        ],
+      }),
+    );
+
+    children.push(
+      new docx.Paragraph({
+        children: [
+          new docx.TextRun({
+            text: "Jam     : ",
+            bold: true,
+          }),
+          new docx.TextRun({
+            text: formattedTime,
+          }),
+        ],
+      }),
+    );
+
+    children.push(
+      new docx.Paragraph({
+        children: [
+          new docx.TextRun({
+            text: "Leader  : ",
+            bold: true,
+          }),
+          new docx.TextRun({
+            text: leaderName,
+          }),
+        ],
+      }),
+    );
+
+    children.push(
+      new docx.Paragraph({
+        text: "",
+      }),
+    );
+
+    /* =====================================================
+     * CERITA AKTIVITAS
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        text: "CERITA AKTIVITAS",
+        heading: docx.HeadingLevel.HEADING_2,
+      }),
+    );
+
+    const descriptionLines = String(activityDescription).split("\n");
+
+    descriptionLines.forEach((line) => {
+      children.push(
+        new docx.Paragraph({
+          text: line || " ",
+          spacing: {
+            after: 100,
+          },
+        }),
+      );
+    });
+
+    children.push(
+      new docx.Paragraph({
+        text: "",
+      }),
+    );
+
+    /* =====================================================
+     * ANGGOTA HADIR
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        text: "ANGGOTA HADIR",
+        heading: docx.HeadingLevel.HEADING_2,
+      }),
+    );
+
+    if (attendances.length === 0) {
+      children.push(
+        new docx.Paragraph({
+          text: "Tidak ada data kehadiran.",
+        }),
+      );
+    } else {
+      attendances.forEach((attendance) => {
+        const memberName = attendance.member?.name || "Unknown Member";
+
+        const isLeader = Number(attendance.member_id) === leaderId;
+
+        children.push(
+          new docx.Paragraph({
+            children: [
+              new docx.TextRun({
+                text: `✓ ${memberName}`,
+                bold: isLeader,
+              }),
+              ...(isLeader
+                ? [
+                    new docx.TextRun({
+                      text: " — Leader",
+                      bold: true,
+                    }),
+                  ]
+                : []),
+            ],
+            bullet: {
+              level: 0,
+            },
+          }),
+        );
+      });
+    }
+
+    children.push(
+      new docx.Paragraph({
+        text: "",
+      }),
+    );
+
+    /* =====================================================
+     * DOKUMENTASI
+     * ===================================================== */
+
+    children.push(
+      new docx.Paragraph({
+        text: "DOKUMENTASI AKTIVITAS",
+        heading: docx.HeadingLevel.HEADING_2,
+      }),
+    );
+
+    if (activityImages.length === 0) {
+      children.push(
+        new docx.Paragraph({
+          text: "Tidak ada foto dokumentasi.",
+        }),
+      );
+    } else {
+      for (let i = 0; i < activityImages.length; i++) {
+        const image = activityImages[i];
+
+        try {
+          console.log(`Mengambil foto ${i + 1}:`, image.image_url);
+
+          const response = await fetch(image.image_url);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+
+          const arrayBuffer = await response.arrayBuffer();
+
+          const imageDataBuffer = new Uint8Array(arrayBuffer);
+
+          children.push(
+            new docx.Paragraph({
+              text: `Foto ${i + 1}`,
+              alignment: docx.AlignmentType.CENTER,
+              spacing: {
+                before: 300,
+                after: 100,
+              },
+            }),
+          );
+
+          children.push(
+            new docx.Paragraph({
+              children: [
+                new docx.ImageRun({
+                  data: imageDataBuffer,
+                  transformation: {
+                    width: 550,
+                    height: 350,
+                  },
+                }),
+              ],
+              alignment: docx.AlignmentType.CENTER,
+              spacing: {
+                after: 300,
+              },
+            }),
+          );
+        } catch (photoError) {
+          console.error(`Gagal memasukkan foto ${i + 1}:`, photoError);
+
+          children.push(
+            new docx.Paragraph({
+              text: `Foto ${i + 1} gagal dimasukkan.`,
+            }),
+          );
+        }
+      }
+    }
+
+    /* =====================================================
+     * CREATE DOCUMENT
+     * ===================================================== */
+
+    const wordDocument = new docx.Document({
+      sections: [
+        {
+          properties: {},
+          children: children,
+        },
+      ],
+    });
+
+    /* =====================================================
+     * GENERATE DOCX
+     * ===================================================== */
+
+    const blob = await docx.Packer.toBlob(wordDocument);
+
+    /* =====================================================
+     * DOWNLOAD
+     * ===================================================== */
+
+    const safeName = activityName
+      .replace(/[<>:"/\\|?*]+/g, "")
+      .replace(/\s+/g, "_")
+      .substring(0, 80);
+
+    const fileName = `BLACK_LINE_${safeName}.docx`;
+
+    const downloadUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = fileName;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
+
+    URL.revokeObjectURL(downloadUrl);
+
+    /* =====================================================
+     * SUCCESS
+     * ===================================================== */
+
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: "Laporan Word berhasil dibuat.",
+        timer: 1800,
+        showConfirmButton: false,
+      });
+    } else {
+      alert("Laporan Word berhasil dibuat.");
+    }
+
+    console.log("WORD EXPORT BERHASIL:", fileName);
+  } catch (error) {
+    console.error("WORD EXPORT ERROR:", error);
+
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "error",
+        title: "Export gagal",
+        text: error?.message || "Terjadi kesalahan saat membuat Word.",
+      });
+    } else {
+      alert(`Export Word gagal.\n\n${error?.message || ""}`);
+    }
+  }
+}
+
+/* =========================================================
+   SEND ACTIVITY TO DISCORD
+========================================================= */
+
+async function sendActivityDiscord(activity) {
+  try {
+    // =========================
+    // LOAD FOTO ACTIVITY
+    // =========================
+
+    const { data: images, error } = await supabaseClient
+      .from("activity_images")
+      .select("id, image_url")
+      .eq("activity_id", activity.id)
+      .order("created_at", {
+        ascending: true,
+      });
+
+    if (error) {
+      console.error("Gagal mengambil foto activity:", error);
+
+      throw error;
+    }
+
+    // =========================
+    // BUILD EMBED
+    // =========================
+
+    const payload = buildActivityEmbed(activity, images || []);
+
+    // =========================
+    // SEND DISCORD
+    // =========================
+
+    return await sendDiscordWebhook("activity", payload);
+  } catch (error) {
+    console.error("Activity Discord error:", error);
+
+    alert(error?.message || "Gagal menyiapkan laporan aktivitas.");
+
+    return false;
+  }
+}
+
+async function sendActivityToDiscord(id) {
+  const activity = supabaseActivities.find(
+    (item) => Number(item.id) === Number(id),
+  );
+
+  if (!activity) {
+    alert("Aktivitas tidak ditemukan.");
+    return;
+  }
+
+  const confirmed = await Swal.fire({
+    title: "Kirim ke Discord?",
+    text: "Laporan aktivitas akan dikirim ke channel Discord.",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Kirim",
+    cancelButtonText: "Batal",
+    confirmButtonColor: "#5865F2",
+  });
+
+  if (!confirmed.isConfirmed) {
+    return;
+  }
+
+  try {
+    Swal.fire({
+      title: "Mengirim...",
+      text: "Sedang mengirim laporan aktivitas ke Discord.",
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
+
+    const success = await sendActivityDiscord(activity);
+
+    if (!success) {
+      return;
+    }
+
+    await Swal.fire({
+      title: "Berhasil!",
+      text: "Laporan aktivitas berhasil dikirim ke Discord.",
+      icon: "success",
+      confirmButtonColor: "#5865F2",
+    });
+  } catch (error) {
+    console.error("Activity Discord error:", error);
+
+    await Swal.fire({
+      title: "Gagal",
+      text: error?.message || "Gagal mengirim laporan aktivitas ke Discord.",
+      icon: "error",
+    });
+  }
 }
