@@ -113,11 +113,32 @@ async function initializeAuth() {
 
   currentProfile = profile;
 
-  // Hanya role admin yang kita anggap admin.
-  currentRole = profile.role === "admin" ? "admin" : "public";
+  // Gunakan role yang tersimpan di profile.
+  // Role yang didukung:
+  // admin
+  // pj_activity
+  // pj_bendahara
+  // sekretaris
+  // pj_brankas
+  //
+  // Jika role kosong / tidak dikenal, gunakan public.
+
+  const allowedRoles = [
+    "admin",
+    "pj_activity",
+    "pj_bendahara",
+    "sekretaris",
+    "pj_brankas",
+  ];
+
+  if (allowedRoles.includes(profile.role)) {
+    currentRole = profile.role;
+  } else {
+    currentRole = "public";
+  }
 
   console.log("Authenticated user:", currentUser.email);
-  console.log("Access mode:", currentRole);
+  console.log("Access role:", currentRole);
 }
 
 function isAdmin() {

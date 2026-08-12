@@ -370,3 +370,140 @@ function buildActivityEmbed(activity, images = []) {
     embeds: [mainEmbed, ...imageEmbeds],
   };
 }
+
+/* =========================================================
+   TASK DISCORD EMBED
+   ========================================================= */
+
+function buildTaskEmbed(task) {
+  const formatDate = (value) => {
+    if (!value) {
+      return "-";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "-";
+    }
+
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(date);
+  };
+
+  const formatDeadline = (value) => {
+    if (!value) {
+      return "Tidak ada deadline";
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+      return "Tidak ada deadline";
+    }
+
+    return new Intl.DateTimeFormat("id-ID", {
+      timeZone: "Asia/Jakarta",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
+
+  /* =======================================================
+     PIC
+     ======================================================= */
+
+  const picLabels = {
+    pj_activity: "PJ Activity",
+    pj_bendahara: "PJ Bendahara",
+    sekretaris: "Sekretaris",
+    pj_brankas: "PJ Brankas",
+  };
+
+  let picText = "Tidak ada PIC.";
+
+  if (Array.isArray(task.pic_roles) && task.pic_roles.length > 0) {
+    picText = task.pic_roles
+      .map((role) => {
+        return `• **${picLabels[role] || role}**`;
+      })
+      .join("\n");
+  }
+
+  /* =======================================================
+     DESKRIPSI
+     ======================================================= */
+
+  const description = task.description?.trim() || "Tidak ada deskripsi tugas.";
+
+  /* =======================================================
+     EMBED
+     
+     STATUS SENGAJA TIDAK DIMASUKKAN
+     ======================================================= */
+
+  return {
+    embeds: [
+      {
+        title: "📋 BLACK LINE Task System",
+
+        description: "```NEW TASK REPORT```",
+
+        color: 0xdc2626,
+
+        fields: [
+          {
+            name: "📋 Judul Tugas",
+            value: `**${task.title || "-"}**`,
+            inline: false,
+          },
+
+          {
+            name: "👑 Leader",
+            value: `**${task.leader_name || "Tidak diketahui"}**`,
+            inline: true,
+          },
+
+          {
+            name: "📅 Deadline",
+            value: formatDeadline(task.deadline),
+            inline: true,
+          },
+
+          {
+            name: "📝 Deskripsi",
+            value: description.substring(0, 1024),
+            inline: false,
+          },
+
+          {
+            name: "👥 PIC",
+            value: picText.substring(0, 1024),
+            inline: false,
+          },
+
+          {
+            name: "🕐 Dibuat",
+            value: formatDate(task.created_at || new Date().toISOString()),
+            inline: false,
+          },
+        ],
+
+        footer: {
+          text: "BLACK LINE Task System",
+        },
+
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}

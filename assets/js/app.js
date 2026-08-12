@@ -1,8 +1,9 @@
 document.addEventListener("DOMContentLoaded", async () => {
   await initializeAuth();
-
   applyRoleAccess();
+  applyTaskAccess();
   updateAuthButtons();
+
   // Ambil status sidebar terakhir
   const sidebarCollapsed = localStorage.getItem("sidebarCollapsed") === "true";
 
@@ -11,9 +12,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   loadOverview();
-
   updateSidebarIcon();
-
   lucide.createIcons();
 });
 
@@ -27,6 +26,32 @@ function applyRoleAccess() {
       menu.classList.add("hidden");
     }
   });
+}
+
+function applyTaskAccess() {
+  const taskMenu = document.getElementById("menu-tasks");
+
+  if (!taskMenu) {
+    return;
+  }
+
+  const allowedRoles = [
+    "admin",
+    "pj_activity",
+    "pj_bendahara",
+    "sekretaris",
+    "pj_brankas",
+  ];
+
+  const hasAccess = allowedRoles.includes(currentRole);
+
+  if (hasAccess) {
+    taskMenu.classList.remove("hidden");
+    taskMenu.setAttribute("aria-hidden", "false");
+  } else {
+    taskMenu.classList.add("hidden");
+    taskMenu.setAttribute("aria-hidden", "true");
+  }
 }
 
 function updateAuthButtons() {
