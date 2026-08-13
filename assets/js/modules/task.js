@@ -1052,7 +1052,9 @@ async function handleTaskFormSubmit(event) {
       created_at: task.created_at || new Date().toISOString(),
     };
 
-    const discordSuccess = await sendDiscordWebhook("task", taskForDiscord);
+    const discordPayload = buildTaskEmbed(taskForDiscord);
+
+    const discordSuccess = await sendDiscordWebhook("task", discordPayload);
 
     if (!discordSuccess) {
       console.warn(
