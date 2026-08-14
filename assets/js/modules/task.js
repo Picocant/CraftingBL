@@ -2,6 +2,8 @@
    BLACK LINE — TASK MODULE
    ========================================================= */
 
+let allTasks = [];
+
 async function loadTasks() {
   setPage("tasks", "Catatan Tugas");
 
@@ -37,17 +39,71 @@ async function loadTasks() {
             </button>
             </div>
 
-      <!-- TASK LIST -->
-      <div id="tasksList" class="space-y-4">
-        <div class="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
-          <div class="text-zinc-400">
-            Memuat tugas...
-          </div>
-        </div>
-      </div>
 
-    </div>
-  `;
+              <!-- FILTER STATUS -->
+
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+
+                      <div>
+                        <div class="text-sm font-semibold text-zinc-200">
+                          Filter Tugas
+                        </div>
+
+                        <div class="text-xs text-zinc-500 mt-1">
+                          Tampilkan tugas berdasarkan status.
+                        </div>
+                      </div>
+
+                      <select
+                        id="taskStatusFilter"
+                        class="
+                          w-full sm:w-56
+                          px-4 py-2.5
+                          rounded-xl
+                          border border-zinc-800
+                          bg-zinc-900
+                          text-sm
+                          text-white
+                          outline-none
+                          focus:border-red-600
+                          transition
+                        "
+                      >
+                        <option value="all">
+                          Semua Status
+                        </option>
+
+                        <option value="Belum Dikerjakan">
+                          Belum Dikerjakan
+                        </option>
+
+                        <option value="Sedang Dikerjakan">
+                          Sedang Dikerjakan
+                        </option>
+
+                        <option value="Selesai">
+                          Selesai
+                        </option>
+
+                        <option value="Dibatalkan">
+                          Dibatalkan
+                        </option>
+                      </select>
+
+                    </div>
+
+                    <!-- TASK LIST -->
+
+                <div id="tasksList" class="space-y-4">
+                  <div class="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 text-center">
+                    <div class="text-zinc-400">
+                      Memuat tugas...
+                    </div>
+                  </div>
+                </div>
+
+          </div>
+            `;
 
   try {
     /* =====================================================
@@ -163,7 +219,9 @@ async function loadTasks() {
       pic_roles: picsMap.get(Number(task.id)) || [],
     }));
 
-    renderTasks(taskData);
+    allTasks = taskData;
+
+    renderTasks(allTasks);
   } catch (error) {
     console.error("Unexpected task loading error:", error);
     showTaskError("Terjadi kesalahan saat memuat tugas.");
@@ -208,6 +266,22 @@ function renderTasks(tasks) {
 }
 
 /* =========================================================
+   FILTER TASK STATUS
+   ========================================================= */
+
+function filterTasksByStatus(status) {
+  if (status === "all") {
+    renderTasks(allTasks);
+    return;
+  }
+
+  const filteredTasks = allTasks.filter(
+    (task) => (task.status || "Belum Dikerjakan") === status,
+  );
+
+  renderTasks(filteredTasks);
+}
+/* =========================================================
    TASK CARD
    ========================================================= */
 
@@ -235,43 +309,93 @@ function buildTaskCard(task) {
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
 
           <!-- TITLE -->
-          <div class="min-w-0">
+              <div class="min-w-0">
 
-            <div class="flex flex-wrap items-center gap-2 mb-2">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
 
-              <span
-                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusConfig.className}"
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${statusConfig.className}"
+                  >
+                    <i
+                      data-lucide="${statusConfig.icon}"
+                      class="w-3.5 h-3.5"
+                    ></i>
+
+                    ${escapeTaskHtml(status)}
+                  </span>
+
+                  ${
+                    deadlineState.isLate
+                      ? `
+                        <span
+                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold"
+                        >
+                          <i
+                            data-lucide="triangle-alert"
+                            class="w-3.5 h-3.5"
+                          ></i>
+                          Terlambat
+                        </span>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+                <h2 class="text-xl font-bold text-white break-words">
+                  ${escapeTaskHtml(task.title)}
+                </h2>
+
+              </div>
+
+              <!-- ACTION -->
+              <div class="flex items-center gap-2 shrink-0">
+
+                <button
+                  type="button"
+                  onclick="openEditTaskForm(${Number(task.id)})"
+                  class="
+                    inline-flex items-center justify-center
+                    w-10 h-10
+                    rounded-xl
+                    border border-zinc-800
+                    bg-zinc-900
+                    hover:bg-zinc-800
+                    text-zinc-400
+                    hover:text-white
+                    transition
+                  "
+                  title="Edit Tugas"
+                >
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+
+              <button
+                type="button"
+                onclick="deleteTask(${Number(task.id)})"
+                class="
+                  inline-flex items-center justify-center
+                  w-10 h-10
+                  rounded-xl
+                  border border-red-500/20
+                  bg-red-500/5
+                  hover:bg-red-500/10
+                  text-red-400
+                  hover:text-red-300
+                  transition
+                "
+                title="Hapus Tugas"
               >
-                <i
-                  data-lucide="${statusConfig.icon}"
-                  class="w-3.5 h-3.5"
-                ></i>
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
 
-                ${escapeTaskHtml(status)}
-              </span>
+              </div>
 
-              ${
-                deadlineState.isLate
-                  ? `
-                    <span
-                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 text-xs font-semibold"
-                    >
-                      <i data-lucide="triangle-alert" class="w-3.5 h-3.5"></i>
-                      Terlambat
-                    </span>
-                  `
-                  : ""
-              }
+              
 
-            </div>
+              </div>
 
-            <h2 class="text-xl font-bold text-white break-words">
-              ${escapeTaskHtml(task.title)}
-            </h2>
 
-          </div>
-
-        </div>
 
         <!-- DESCRIPTION -->
         <div class="mt-5">
@@ -314,6 +438,50 @@ function buildTaskCard(task) {
             </div>
 
           </div>
+
+          <!-- STATUS -->
+              <div id="taskStatusWrapper" class="hidden">
+
+                <label
+                  for="taskStatus"
+                  class="block text-sm font-semibold text-zinc-200 mb-2"
+                >
+                  Status Tugas
+                </label>
+
+                <select
+                  id="taskStatus"
+                  name="status"
+                  class="
+                    w-full
+                    px-4 py-3
+                    rounded-xl
+                    border border-zinc-800
+                    bg-zinc-900
+                    text-white
+                    outline-none
+                    focus:border-red-600
+                    transition
+                  "
+                >
+                  <option value="Belum Dikerjakan">
+                    Belum Dikerjakan
+                  </option>
+
+                  <option value="Sedang Dikerjakan">
+                    Sedang Dikerjakan
+                  </option>
+
+                  <option value="Selesai">
+                    Selesai
+                  </option>
+
+                  <option value="Dibatalkan">
+                    Dibatalkan
+                  </option>
+                </select>
+
+              </div>
 
           <!-- DEADLINE -->
           <div class="rounded-xl border border-zinc-800 bg-zinc-950/50 p-4">
@@ -895,6 +1063,9 @@ async function handleTaskFormSubmit(event) {
     return false;
   }
 
+  const formMode = form?.dataset.mode || "create";
+  const editingTaskId = form?.dataset.taskId || null;
+
   const titleInput = document.getElementById("taskTitle");
   const descriptionInput = document.getElementById("taskDescription");
   const leaderInput = document.getElementById("taskLeader");
@@ -904,6 +1075,17 @@ async function handleTaskFormSubmit(event) {
   const description = descriptionInput?.value.trim() || "";
   const leaderId = leaderInput?.value || "";
   const deadline = deadlineInput?.value || null;
+
+  const statusInput = document.getElementById("editTaskStatus");
+
+  const status = statusInput?.value || "Belum Dikerjakan";
+
+  console.log("TASK EDIT DEBUG:", {
+    formMode,
+    editingTaskId,
+    statusElement: statusInput,
+    statusValue: statusInput?.value,
+  });
 
   /* =====================================================
      VALIDASI JUDUL
@@ -971,40 +1153,88 @@ async function handleTaskFormSubmit(event) {
 
   try {
     /* =====================================================
-       INSERT TASK
-       ===================================================== */
+   CREATE / UPDATE TASK
+   ===================================================== */
 
-    const { data: task, error: taskError } = await supabaseClient
-      .from("tasks")
-      .insert({
-        title: title,
-        description: description || null,
-        leader_id: Number(leaderId),
-        deadline: deadline || null,
-        status: "Belum Dikerjakan",
-      })
-      .select("id, created_at")
-      .single();
+    let task;
+    let taskError;
 
-    if (taskError) {
-      console.error("Failed to create task:", taskError);
+    if (formMode === "edit") {
+      /* ===================================================
+     UPDATE
+     =================================================== */
 
-      showToast(taskError.message || "Gagal menyimpan tugas.", "error");
+      if (!editingTaskId) {
+        showToast("ID tugas untuk edit tidak ditemukan.", "error");
+        return false;
+      }
 
-      return false;
-    }
+      const result = await supabaseClient
+        .from("tasks")
+        .update({
+          title: title,
+          description: description || null,
+          leader_id: Number(leaderId),
+          deadline: deadline || null,
+          status: status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", Number(editingTaskId))
+        .select("id, created_at")
+        .single();
 
-    if (!task?.id) {
-      console.error("Task created but task ID was not returned.");
+      task = result.data;
+      taskError = result.error;
+    } else {
+      /* ===================================================
+     INSERT
+     =================================================== */
 
-      showToast("Tugas tersimpan tetapi ID tugas tidak ditemukan.", "error");
+      const result = await supabaseClient
+        .from("tasks")
+        .insert({
+          title: title,
+          description: description || null,
+          leader_id: Number(leaderId),
+          deadline: deadline || null,
+          status: "Belum Dikerjakan",
+        })
+        .select("id, created_at")
+        .single();
 
-      return false;
+      task = result.data;
+      taskError = result.error;
     }
 
     /* =====================================================
-       INSERT TASK PICS
-       ===================================================== */
+   CREATE / UPDATE TASK PICS
+   ===================================================== */
+
+    if (formMode === "edit") {
+      /* ===================================================
+     HAPUS PIC LAMA
+     =================================================== */
+
+      const { error: deletePicError } = await supabaseClient
+        .from("task_pics")
+        .delete()
+        .eq("task_id", task.id);
+
+      if (deletePicError) {
+        console.error("Failed to delete old task PICs:", deletePicError);
+
+        showToast(
+          "Tugas diperbarui, tetapi PIC lama gagal diperbarui.",
+          "error",
+        );
+
+        return false;
+      }
+    }
+
+    /* =====================================================
+   INSERT PIC BARU
+   ===================================================== */
 
     const picRows = selectedPicRoles.map((picRole) => ({
       task_id: task.id,
@@ -1016,14 +1246,14 @@ async function handleTaskFormSubmit(event) {
       .insert(picRows);
 
     if (picError) {
-      console.error("Failed to create task PICs:", picError);
+      console.error("Failed to save task PICs:", picError);
 
-      /*
-       * Task utama sudah berhasil dibuat.
-       * Beri tahu user bahwa PIC gagal disimpan.
-       */
-
-      showToast("Tugas tersimpan, tetapi PIC gagal disimpan.", "error");
+      showToast(
+        formMode === "edit"
+          ? "Tugas diperbarui, tetapi PIC gagal diperbarui."
+          : "Tugas tersimpan, tetapi PIC gagal disimpan.",
+        "error",
+      );
 
       return false;
     }
@@ -1032,41 +1262,47 @@ async function handleTaskFormSubmit(event) {
    DISCORD — NEW TASK
    ===================================================== */
 
-    const leaderName =
-      leaderInput?.selectedOptions?.[0]?.textContent?.trim() ||
-      "Tidak diketahui";
+    if (formMode === "create") {
+      const leaderName =
+        leaderInput?.selectedOptions?.[0]?.textContent?.trim() ||
+        "Tidak diketahui";
 
-    const taskForDiscord = {
-      id: task.id,
+      const taskForDiscord = {
+        id: task.id,
 
-      title: title,
+        title: title,
 
-      description: description || null,
+        description: description || null,
 
-      leader_name: leaderName,
+        leader_name: leaderName,
 
-      pic_roles: selectedPicRoles,
+        pic_roles: selectedPicRoles,
 
-      deadline: deadline || null,
+        deadline: deadline || null,
 
-      created_at: task.created_at || new Date().toISOString(),
-    };
+        created_at: task.created_at || new Date().toISOString(),
+      };
 
-    const discordPayload = buildTaskEmbed(taskForDiscord);
+      const discordPayload = buildTaskEmbed(taskForDiscord);
 
-    const discordSuccess = await sendDiscordWebhook("task", discordPayload);
+      const discordSuccess = await sendDiscordWebhook("task", discordPayload);
 
-    if (!discordSuccess) {
-      console.warn(
-        "Task berhasil disimpan, tetapi laporan Discord gagal dikirim.",
-      );
+      if (!discordSuccess) {
+        console.warn(
+          "Task berhasil disimpan, tetapi laporan Discord gagal dikirim.",
+        );
+      }
     }
 
     /* =====================================================
        BERHASIL
        ===================================================== */
 
-    showToast("Tugas berhasil dibuat.");
+    showToast(
+      formMode === "edit"
+        ? "Tugas berhasil diperbarui."
+        : "Tugas berhasil dibuat.",
+    );
 
     closeTaskForm();
 
@@ -1237,4 +1473,256 @@ function renderTaskPicOptions() {
       `,
     )
     .join("");
+}
+
+/* =========================================================
+   EDIT TASK FORM
+   ========================================================= */
+
+async function openEditTaskForm(taskId) {
+  if (!taskId) {
+    showToast("ID tugas tidak ditemukan.", "error");
+    return;
+  }
+
+  try {
+    const { data: task, error: taskError } = await supabaseClient
+      .from("tasks")
+      .select(
+        `
+        id,
+        title,
+        description,
+        leader_id,
+        deadline,
+        status
+      `,
+      )
+      .eq("id", taskId)
+      .single();
+
+    if (taskError) {
+      console.error("Failed to load task for edit:", taskError);
+
+      showToast(taskError.message || "Gagal mengambil data tugas.", "error");
+
+      return;
+    }
+
+    if (!task) {
+      showToast("Data tugas tidak ditemukan.", "error");
+      return;
+    }
+
+    const { data: taskPics, error: picError } = await supabaseClient
+      .from("task_pics")
+      .select("pic_role")
+      .eq("task_id", taskId);
+
+    if (picError) {
+      console.error("Failed to load task PICs for edit:", picError);
+
+      showToast(picError.message || "Gagal mengambil data PIC tugas.", "error");
+
+      return;
+    }
+
+    /* =====================================================
+       BUKA FORM
+       ===================================================== */
+
+    openTaskForm();
+
+    /* =====================================================
+       LOAD OPTIONS TERLEBIH DAHULU
+       ===================================================== */
+
+    await loadTaskFormOptions();
+
+    /* =====================================================
+       ISI DATA LAMA
+       ===================================================== */
+
+    const titleInput = document.getElementById("taskTitle");
+    const descriptionInput = document.getElementById("taskDescription");
+    const leaderInput = document.getElementById("taskLeader");
+    const deadlineInput = document.getElementById("taskDeadline");
+
+    if (titleInput) {
+      titleInput.value = task.title || "";
+    }
+
+    if (descriptionInput) {
+      descriptionInput.value = task.description || "";
+    }
+
+    if (leaderInput) {
+      leaderInput.value = task.leader_id || "";
+    }
+
+    if (deadlineInput) {
+      deadlineInput.value = task.deadline || "";
+    }
+
+    /* =====================================================
+       SET PIC
+       ===================================================== */
+
+    const picRoles = (taskPics || []).map((pic) => pic.pic_role);
+
+    document.querySelectorAll('input[name="task_pic"]').forEach((input) => {
+      input.checked = picRoles.includes(input.value);
+    });
+
+    /* =====================================================
+       UBAH JUDUL MODAL
+       ===================================================== */
+
+    const modalTitle = document.querySelector("#taskFormModal h2");
+
+    if (modalTitle) {
+      modalTitle.textContent = "Edit Tugas";
+    }
+
+    const modalDescription = document.querySelector("#taskFormModal h2 + p");
+
+    if (modalDescription) {
+      modalDescription.textContent = "Perbarui informasi tugas.";
+    }
+
+    /* =====================================================
+       UBAH TOMBOL
+       ===================================================== */
+
+    const submitButton = document.querySelector(
+      '#taskFormModal button[type="submit"]',
+    );
+
+    if (submitButton) {
+      submitButton.innerHTML = `
+        <i data-lucide="save" class="w-4 h-4"></i>
+        Simpan Perubahan
+      `;
+
+      lucide.createIcons();
+    }
+
+    /* =====================================================
+       SIMPAN MODE EDIT
+       ===================================================== */
+
+    const form = document.getElementById("taskForm");
+
+    if (form) {
+      form.dataset.mode = "edit";
+      form.dataset.taskId = String(task.id);
+    }
+
+    /* =====================================================
+        STATUS EDIT
+        ===================================================== */
+
+    const statusInfo = document.querySelector(
+      "#taskFormModal .border-blue-500\\/20",
+    );
+
+    if (statusInfo) {
+      statusInfo.innerHTML = `
+          <label
+            for="taskStatus"
+            class="block text-sm font-semibold text-blue-300 mb-2"
+          >
+            Status Tugas
+          </label>
+
+          <select
+            id="editTaskStatus"
+            name="status"
+            class="
+              w-full
+              px-4 py-3
+              rounded-xl
+              border border-zinc-800
+              bg-zinc-900
+              text-white
+              outline-none
+              focus:border-red-600
+              transition
+            "
+          >
+            <option value="Belum Dikerjakan">
+              Belum Dikerjakan
+            </option>
+
+            <option value="Sedang Dikerjakan">
+              Sedang Dikerjakan
+            </option>
+
+            <option value="Selesai">
+              Selesai
+            </option>
+
+            <option value="Dibatalkan">
+              Dibatalkan
+            </option>
+          </select>
+        `;
+
+      const statusInput = document.getElementById("editTaskStatus");
+
+      if (statusInput) {
+        statusInput.value = task.status || "Belum Dikerjakan";
+      }
+
+      lucide.createIcons();
+    }
+  } catch (error) {
+    console.error("Unexpected edit task error:", error);
+
+    showToast("Terjadi kesalahan saat membuka tugas.", "error");
+  }
+}
+
+/* =========================================================
+   DELETE TASK
+   ========================================================= */
+
+async function deleteTask(taskId) {
+  if (!taskId) {
+    showToast("ID tugas tidak ditemukan.", "error");
+    return false;
+  }
+
+  const confirmed = confirm("Apakah kamu yakin ingin menghapus tugas ini?");
+
+  if (!confirmed) {
+    return false;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from("tasks")
+      .delete()
+      .eq("id", Number(taskId));
+
+    if (error) {
+      console.error("Failed to delete task:", error);
+
+      showToast(error.message || "Gagal menghapus tugas.", "error");
+
+      return false;
+    }
+
+    showToast("Tugas berhasil dihapus.");
+
+    await loadTasks();
+
+    return true;
+  } catch (error) {
+    console.error("Unexpected delete task error:", error);
+
+    showToast("Terjadi kesalahan saat menghapus tugas.", "error");
+
+    return false;
+  }
 }
