@@ -1,10 +1,11 @@
 let editingMaterialId = null;
 let supabaseMaterials = [];
+let selectedMaterialPhoto = null;
 
 async function fetchMaterialsFromSupabase() {
   const { data, error } = await supabaseClient
     .from("materials")
-    .select("id, name, price, currency")
+    .select("id, name, price, currency, image_url")
     .order("name", { ascending: true });
 
   if (error) {
@@ -26,6 +27,10 @@ function resetMaterialForm() {
   document.getElementById("materialPrice").value = "";
 
   document.getElementById("materialCurrency").value = "Clean";
+
+  selectedMaterialPhoto = null;
+  document.getElementById("materialPhoto").value = "";
+  document.getElementById("materialPhotoPreview").innerHTML = "";
 
   document.getElementById("saveMaterialBtn").textContent = "Simpan Material";
 
@@ -81,6 +86,21 @@ function materialPage() {
                     </select>
 
                 </div>
+
+                  <div class="mt-4">
+                    <label for="materialPhoto" class="block text-sm text-zinc-400 mb-2">
+                      Foto Material
+                    </label>
+
+                    <input
+                      id="materialPhoto"
+                      type="file"
+                      accept="image/*"
+                      class="input"
+                      onchange="previewMaterialPhoto()">
+
+                    <div id="materialPhotoPreview" class="mt-3"></div>
+                  </div>
 
                 <button
                     id="saveMaterialBtn"
@@ -155,35 +175,55 @@ async function saveMaterial() {
     editingMaterialId === null ? "Menyimpan..." : "Mengupdate...";
 
   let error;
+  let imageUrl = editingMaterialId === null
+    ? null
+    : supabaseMaterials.find((material) => material.id === editingMaterialId)?.image_url || null;
 
-  if (editingMaterialId === null) {
-    const result = await supabaseClient.from("materials").insert({
-      name: name,
-      price: price,
-      currency: currency,
-    });
+  try {
+    if (editingMaterialId === null) {
+      if (selectedMaterialPhoto) {
+        imageUrl = await uploadMaterialPhoto(selectedMaterialPhoto);
+      }
 
-    error = result.error;
-  } else {
-    const result = await supabaseClient
-      .from("materials")
-      .update({
+      const result = await supabaseClient.from("materials").insert({
         name: name,
         price: price,
         currency: currency,
-      })
-      .eq("id", editingMaterialId);
+        image_url: imageUrl,
+      });
 
-    error = result.error;
+      error = result.error;
+    } else {
+      if (selectedMaterialPhoto) {
+        imageUrl = await uploadMaterialPhoto(selectedMaterialPhoto);
+      }
+
+      const result = await supabaseClient
+        .from("materials")
+        .update({
+          name: name,
+          price: price,
+          currency: currency,
+          image_url: imageUrl,
+        })
+        .eq("id", editingMaterialId);
+
+      error = result.error;
+    }
+  } catch (uploadError) {
+    console.error("Gagal mengupload foto material:", uploadError);
+    alert(`Foto material gagal disimpan.\n\n${uploadError.message || ""}`);
+    saveButton.disabled = false;
+    saveButton.textContent =
+      editingMaterialId === null ? "Simpan Material" : "Update Material";
+    return;
   }
 
   if (error) {
     console.error("Gagal menyimpan material:", error);
 
     alert(
-      editingMaterialId === null
-        ? "Material gagal disimpan."
-        : "Material gagal diupdate.",
+      `${editingMaterialId === null ? "Material gagal disimpan." : "Material gagal diupdate."}\n\n${error.message || error.details || "Unknown Supabase error"}`,
     );
 
     saveButton.disabled = false;
@@ -218,10 +258,19 @@ function editMaterial(id) {
   }
 
   editingMaterialId = Number(id);
+  selectedMaterialPhoto = null;
+
+  const photoInput = document.getElementById("materialPhoto");
+  photoInput.value = "";
 
   document.getElementById("materialName").value = material.name;
   document.getElementById("materialPrice").value = material.price;
   document.getElementById("materialCurrency").value = material.currency;
+
+  const preview = document.getElementById("materialPhotoPreview");
+  preview.innerHTML = material.image_url
+    ? `<img src="${material.image_url}" alt="Foto ${material.name}" class="w-24 h-24 object-cover rounded-xl border border-zinc-800">`
+    : "";
 
   document.getElementById("saveMaterialBtn").textContent = "Update Material";
 
@@ -248,7 +297,14 @@ function renderMaterials() {
       html += `
         <div class="border border-zinc-800 rounded-xl p-5 mb-3 flex justify-between items-center">
 
-            <div>
+      <div class="flex items-center gap-4">
+
+        <img
+          src="${item.image_url || "https://placehold.co/96x96?text=No+Photo"}"
+          alt="Foto ${item.name}"
+          class="w-20 h-20 object-cover rounded-xl border border-zinc-800">
+
+      <div>
 
                 <h3 class="font-bold text-lg">
                     ${item.name}
@@ -261,6 +317,8 @@ function renderMaterials() {
                 <p>
                     Rp ${Number(item.price).toLocaleString("id-ID")}
                 </p>
+
+            </div>
 
             </div>
 
@@ -294,6 +352,41 @@ function renderMaterials() {
 
   document.getElementById("materialCount").textContent =
     `${data.length} Material`;
+}
+
+function previewMaterialPhoto() {
+  const input = document.getElementById("materialPhoto");
+  const preview = document.getElementById("materialPhotoPreview");
+  selectedMaterialPhoto = input.files?.[0] || null;
+
+  if (!selectedMaterialPhoto) {
+    preview.innerHTML = "";
+    return;
+  }
+
+  const imageUrl = URL.createObjectURL(selectedMaterialPhoto);
+  preview.innerHTML = `
+    <img src="${imageUrl}" alt="Preview foto material" class="w-24 h-24 object-cover rounded-xl border border-zinc-800">
+  `;
+}
+
+async function uploadMaterialPhoto(file) {
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const filePath = `${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("material-images")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabaseClient.storage
+    .from("material-images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 }
 
 async function deleteMaterial(id) {

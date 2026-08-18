@@ -199,6 +199,135 @@ function buildInventoryEmbed(transaction) {
   };
 }
 
+function buildCashflowEmbed(cashflow) {
+  const isDeposit = cashflow.type === "income";
+  const formattedAmount = `Rp ${Number(cashflow.amount || 0).toLocaleString("id-ID")}`;
+  const formattedCleanBalance = `Rp ${Number(cashflow.clean_balance || 0).toLocaleString("id-ID")}`;
+  const formattedDirtyBalance = `Rp ${Number(cashflow.dirty_balance || 0).toLocaleString("id-ID")}`;
+
+  return {
+    embeds: [
+      {
+        title: "BLACK LINE Keuangan",
+        description: isDeposit ? "```DEPOSIT```" : "```WITHDRAW```",
+        color: isDeposit ? 0x22c55e : 0xef4444,
+        fields: [
+          {
+            name: "Arus Uang",
+            value: isDeposit ? "Deposit / Uang Masuk" : "WD / Uang Keluar",
+            inline: true,
+          },
+          {
+            name: "Jenis Uang",
+            value: cashflow.money_type === "clean" ? "Clean" : "Dirty",
+            inline: true,
+          },
+          {
+            name: "Jumlah",
+            value: `**${formattedAmount}**`,
+            inline: true,
+          },
+          {
+            name: "Total Clean",
+            value: `**${formattedCleanBalance}**`,
+            inline: true,
+          },
+          {
+            name: "Total Dirty",
+            value: `**${formattedDirtyBalance}**`,
+            inline: true,
+          },
+          {
+            name: "Tanggal",
+            value: cashflow.transaction_date || "-",
+            inline: true,
+          },
+          {
+            name: "Keterangan",
+            value: cashflow.description || "-",
+            inline: false,
+          },
+        ],
+        ...(cashflow.photo_url ? { image: { url: cashflow.photo_url } } : {}),
+        footer: {
+          text: "BLACK LINE ",
+        },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
+function buildContributionEmbed(contribution) {
+  const quantity = Number(contribution.quantity) || 0;
+  const unitPrice = Number(contribution.unit_price) || 0;
+  const totalValue = Number(contribution.total_value) || quantity * unitPrice;
+  const contributionDate = contribution.contribution_date
+    ? new Intl.DateTimeFormat("id-ID", {
+        timeZone: "Asia/Jakarta",
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date(contribution.contribution_date))
+    : "-";
+
+  return {
+    embeds: [
+      {
+        title: "📦 BLACK LINE Contribution System",
+        description: "```NEW CONTRIBUTION REPORT```",
+        color: 0x22c55e,
+        fields: [
+          {
+            name: "👤 Anggota",
+            value: `**${contribution.member_name || "-"}**`,
+            inline: true,
+          },
+          {
+            name: "📅 Tanggal Setoran",
+            value: contributionDate,
+            inline: true,
+          },
+          {
+            name: "📦 Jenis",
+            value: contribution.type || "-",
+            inline: true,
+          },
+          {
+            name: "🧱 Item",
+            value: `**${contribution.item_name || "-"}**`,
+            inline: false,
+          },
+          {
+            name: "📊 Rincian",
+            value:
+              `Jumlah: **${quantity.toLocaleString("id-ID")}x**\n` +
+              `Harga satuan: **Rp ${unitPrice.toLocaleString("id-ID")}**\n` +
+              `Total nilai: **Rp ${totalValue.toLocaleString("id-ID")}**`,
+            inline: false,
+          },
+          {
+            name: "📝 Catatan",
+            value: contribution.notes?.trim() || "-",
+            inline: false,
+          },
+        ],
+        ...(contribution.photo_url
+          ? { image: { url: contribution.photo_url } }
+          : {}),
+        footer: {
+          text: "BLACK LINE Contribution System",
+        },
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
 /* =========================================================
    ACTIVITY DISCORD EMBED
 ========================================================= */

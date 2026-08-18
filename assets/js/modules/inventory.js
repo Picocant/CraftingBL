@@ -37,7 +37,8 @@ async function loadInventoryItems() {
                 id,
                 name,
                 price,
-                currency
+                currency,
+                image_url
             )
         `,
     )
@@ -85,7 +86,8 @@ function renderInventory(materials) {
             >
                 <div class="flex justify-center">
                     <img
-                        src="https://placehold.co/96x96"
+                      src="${material.materials.image_url || "https://placehold.co/96x96?text=No+Photo"}"
+                      alt="Foto ${material.materials.name}"
                         class="w-24 h-24 object-contain"
                     >
                 </div>
@@ -125,7 +127,8 @@ function renderInventoryDetail(item = null) {
 
             <div class="flex justify-center">
                 <img
-                    src="https://placehold.co/180x180"
+                  src="${item.materials.image_url || "https://placehold.co/180x180?text=No+Photo"}"
+                  alt="Foto ${item.materials.name}"
                     class="w-40 h-40 object-contain"
                 >
             </div>

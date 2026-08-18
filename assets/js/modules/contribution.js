@@ -3,6 +3,7 @@ let contributionMembers = [];
 let contributionMaterials = [];
 let contributionCraftings = [];
 let editingContributionId = null;
+let selectedContributionPhoto = null;
 
 /* =========================================================
    FETCH MEMBERS
@@ -98,6 +99,7 @@ async function fetchContributionsFromSupabase() {
       unit_price,
       total_value,
       notes,
+      photo_url,
       created_at,
       members (
         id,
@@ -477,6 +479,36 @@ function contributionPage() {
         </div>
 
 
+        <!-- PHOTO -->
+        <div class="mt-5">
+
+          <label
+            for="contributionPhoto"
+            class="
+              block
+              text-xs
+              uppercase
+              tracking-widest
+              text-zinc-500
+              mb-2
+            "
+          >
+            Foto Setoran
+          </label>
+
+          <input
+            id="contributionPhoto"
+            type="file"
+            accept="image/*"
+            class="input"
+            onchange="previewContributionPhoto()"
+          >
+
+          <div id="contributionPhotoPreview" class="mt-3"></div>
+
+        </div>
+
+
         <!-- SAVE -->
         <div
           class="
@@ -763,6 +795,100 @@ function calculateContributionTotal() {
   }
 }
 
+function previewContributionPhoto() {
+  const input = document.getElementById("contributionPhoto");
+  const preview = document.getElementById("contributionPhotoPreview");
+
+  if (!input || !preview) {
+    return;
+  }
+
+  selectedContributionPhoto = input.files?.[0] || null;
+  preview.innerHTML = "";
+
+  if (!selectedContributionPhoto) {
+    return;
+  }
+
+  const imageUrl = URL.createObjectURL(selectedContributionPhoto);
+
+  preview.innerHTML = `
+    <img
+      src="${imageUrl}"
+      alt="Preview foto kontribusi"
+      class="w-full max-w-sm h-48 object-cover rounded-xl border border-zinc-800"
+    >
+    <p class="text-xs text-zinc-500 mt-2">
+      ${escapeContributionHTML(selectedContributionPhoto.name)}
+    </p>
+  `;
+}
+
+function openContributionPhotoModal(imageUrl) {
+  closeContributionPhotoModal();
+
+  const modal = document.createElement("div");
+  modal.id = "contributionPhotoModal";
+  modal.className =
+    "fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-5";
+  modal.onclick = (event) => {
+    if (event.target === modal) {
+      closeContributionPhotoModal();
+    }
+  };
+
+  modal.innerHTML = `
+    <div class="relative max-w-5xl max-h-full">
+      <button
+        type="button"
+        class="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center hover:bg-red-600 transition"
+        onclick="closeContributionPhotoModal()"
+        title="Tutup foto"
+      >
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <img
+        src="${escapeContributionHTML(imageUrl)}"
+        alt="Foto kontribusi ukuran penuh"
+        class="max-w-full max-h-[85vh] object-contain rounded-xl border border-zinc-700 shadow-2xl"
+      >
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  if (typeof lucide !== "undefined") {
+    lucide.createIcons();
+  }
+}
+
+function closeContributionPhotoModal() {
+  document.getElementById("contributionPhotoModal")?.remove();
+}
+
+async function uploadContributionPhoto(file) {
+  if (!file) {
+    return null;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const filePath = `${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from("contribution-images")
+    .upload(filePath, file);
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabaseClient.storage
+    .from("contribution-images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
 /* =========================================================
    DEFAULT DATE
 ========================================================= */
@@ -908,6 +1034,19 @@ async function saveContribution() {
     notes: notes,
   };
 
+  try {
+    if (selectedContributionPhoto) {
+      contributionData.photo_url = await uploadContributionPhoto(
+        selectedContributionPhoto,
+      );
+    }
+  } catch (photoError) {
+    console.error("Gagal mengupload foto kontribusi:", photoError);
+    alert(`Foto kontribusi gagal disimpan.\n\n${photoError.message || ""}`);
+    resetContributionSaveButton();
+    return;
+  }
+
   let error = null;
 
   /* =========================
@@ -957,6 +1096,25 @@ async function saveContribution() {
     return;
   }
 
+  if (editingContributionId === null) {
+    const discordSuccess = await sendDiscordWebhook(
+      "contribution",
+      buildContributionEmbed({
+        ...contributionData,
+        total_value: quantity * unitPrice,
+        member_name:
+          contributionMembers.find((member) => Number(member.id) === memberId)
+            ?.name || "Anggota tidak ditemukan",
+      }),
+    );
+
+    if (!discordSuccess) {
+      console.warn(
+        "Kontribusi berhasil disimpan, tetapi laporan Discord gagal dikirim.",
+      );
+    }
+  }
+
   /* =========================
      SUCCESS
   ========================= */
@@ -970,6 +1128,7 @@ async function saveContribution() {
   );
 
   editingContributionId = null;
+  selectedContributionPhoto = null;
 
   await loadContributions();
 }
@@ -1013,6 +1172,7 @@ function editContribution(id) {
   const typeInput = document.getElementById("contributionType");
   const quantityInput = document.getElementById("contributionQuantity");
   const notesInput = document.getElementById("contributionNotes");
+  const photoInput = document.getElementById("contributionPhoto");
 
   /* =========================
      BASIC DATA
@@ -1036,6 +1196,20 @@ function editContribution(id) {
 
   if (notesInput) {
     notesInput.value = contribution.notes || "";
+  }
+
+  selectedContributionPhoto = null;
+
+  if (photoInput) {
+    photoInput.value = "";
+  }
+
+  const photoPreview = document.getElementById("contributionPhotoPreview");
+
+  if (photoPreview) {
+    photoPreview.innerHTML = contribution.photo_url
+      ? `<img src="${escapeContributionHTML(contribution.photo_url)}" alt="Foto kontribusi" onclick="openContributionPhotoModal(this.src)" class="w-full max-w-sm h-48 object-cover rounded-xl border border-zinc-800 cursor-zoom-in">`
+      : "";
   }
 
   /* =========================
@@ -1348,6 +1522,19 @@ function renderContributionHistory() {
                     ${escapeContributionHTML(contribution.item_name)}
                   </div>
 
+                  ${
+                    contribution.photo_url
+                      ? `
+                        <img
+                          src="${escapeContributionHTML(contribution.photo_url)}"
+                          alt="Foto kontribusi"
+                          onclick="openContributionPhotoModal(this.src)"
+                          class="w-full max-w-xs h-40 object-cover rounded-xl border border-zinc-800 mt-3 cursor-zoom-in hover:border-red-500 transition"
+                        >
+                      `
+                      : ""
+                  }
+
 
                   <div
                     class="
@@ -1563,6 +1750,8 @@ async function loadContributions() {
   await fetchContributionsFromSupabase();
 
   document.getElementById("app").innerHTML = contributionPage();
+
+  selectedContributionPhoto = null;
 
   setDefaultContributionDate();
 
